@@ -1,27 +1,14 @@
 ﻿import { RichEmbed, GuildMember } from "discord.js";
+import { LeadershipList } from "../Helpers/leadership-list.helper";
 
 export class ThanksForApplyingEmbed extends RichEmbed {
+    private _leadershipList: LeadershipList;
+
     constructor(leadership: GuildMember[]) {
         super();
-
-        let leadershipList = '';
-
-        for (let i = 0; i < leadership.length; i++) {
-            if (i === leadership.length - 1) {
-                if (i === 0) {
-                    leadershipList += `**${leadership[i].displayName}**`;
-                }
-                else {
-                    leadershipList += `or **${leadership[i].displayName}**`;
-                }
-            }
-            else {
-                leadershipList += `**${leadership[i].displayName}**, `;
-            }
-
-        }
+        this._leadershipList = new LeadershipList(leadership);
 
         this.addField('Application Successful!', 'Thank you for applying. We will reach out to you within the week to discuss next steps.');
-        this.addField('If you have any questions, feel free to reach out to any member of our leadership', leadershipList);
+        this.addField('If you have any questions, feel free to reach out to any member of our leadership', this._leadershipList.getMentions());
     }
 }

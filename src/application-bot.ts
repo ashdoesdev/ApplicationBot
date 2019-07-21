@@ -1,4 +1,4 @@
-﻿import { Client, GuildMember, Message, TextChannel, RichEmbed, MessageCollector } from 'discord.js';
+﻿import { Client, GuildMember, Message, TextChannel, RichEmbed, MessageCollector, User } from 'discord.js';
 import { AbortCharterEmbed } from './Embeds/abort-charter-embed';
 import { AbortEmbed } from './Embeds/abort-embed';
 import { ApplicationStartEmbed } from './Embeds/application-start-embed';
@@ -8,6 +8,11 @@ import { ApplicationState } from './Models/ApplicationState';
 import { QuestionEmbed } from './Embeds/question-embed';
 import { ThanksForApplyingEmbed } from './Embeds/thanks-for-applying-embed';
 import { ApplicationEmbed } from './Embeds/application-embed';
+import { AlreadyAppliedEmbed } from './Embeds/already-applied-embed';
+import { VoteEmbed } from './Embeds/vote-embed';
+import { setTimeout } from 'timers';
+import { ApplicationAcceptedEmbed } from './Embeds/application-accepted-embed';
+import { ApplicationDeniedEmbed } from './Embeds/application-denied-embed';
 
 export class ApplicationBot {
     private _client = new Client();
@@ -33,19 +38,21 @@ export class ApplicationBot {
         this._client.on('message', message => {
             if (message.content === '/apply') {
                 if (message.channel.id === this._applyChannel.id) {
+                    this._leadership = this._client.guilds.get('602194279854505985').members.array().filter((member) => member.roles.filter((role) => role.name === 'Leadership').array().length > 0);
+
                     if (!this._activeApplications) {
                         this._activeApplications = new Map<string, ApplicationState>();
                     }
 
                     if (!this._activeApplications.get(message.author.id)) {
                         this._activeApplications.set(message.author.id, new ApplicationState());
+                    } else {
+                        this.sendEmbed(message, new AlreadyAppliedEmbed(this._leadership));
                     }
 
                     let activeApplication = this._activeApplications.get(message.author.id);
 
-                    this._leadership = this._client.guilds.get('602194279854505985').members.array().filter((member) => member.roles.filter((role) => role.name === 'Leadership').array().length > 0);
-
-                    activeApplication.progress = message.author.send(new IntroEmbed()).then((sentMessage) => {
+                    message.author.send(new IntroEmbed()).then((sentMessage) => {
                         this.awaitApproval(
                             sentMessage as Message,
                             message,
@@ -60,7 +67,7 @@ export class ApplicationBot {
     }
 
     private proceedToApplicationStart(message: Message, activeApplication: ApplicationState) {
-        activeApplication.progress = message.author.send(new ApplicationStartEmbed()).then((sentMessage) => {
+        message.author.send(new ApplicationStartEmbed()).then((sentMessage) => {
             this.awaitApproval(
                 sentMessage as Message, 
                 message,
@@ -77,7 +84,7 @@ export class ApplicationBot {
 
     private proceedToQuestion(questionNumber: number, message: Message, activeApplication: ApplicationState) {
         if (questionNumber !== lastQuestion) {
-            activeApplication.progress = message.author.send(new QuestionEmbed(questions[questionNumber], questionNumber)).then((sentMessage) => {
+            message.author.send(new QuestionEmbed(questions[questionNumber], questionNumber)).then((sentMessage) => {
                 questionNumber++;
 
                 this.awaitResponse(
@@ -89,7 +96,7 @@ export class ApplicationBot {
                 )
             })
         } else {
-            activeApplication.progress = message.author.send('That\'s all! Check yes to confirm you wish to apply and to submit your application.').then((sentMessage) => {
+            message.author.send('That\'s all! Check yes to confirm you wish to apply and to submit your application.').then((sentMessage) => {
                 this.awaitApproval(
                     sentMessage as Message,
                     message,
@@ -103,10 +110,45 @@ export class ApplicationBot {
     private finalizeApplication(message: Message, activeApplication: ApplicationState): void {
         message.author.send(new ThanksForApplyingEmbed(this._leadership));
 
-        this._applicationsNewChannel.send(new ApplicationEmbed(message, questions, activeApplication));
-
-        this._activeApplications.delete(message.author.id);
+        this._applicationsNewChannel.send(new ApplicationEmbed(message, questions, activeApplication)).then((applicationMessage) => {
+            (applicationMessage as Message).channel.send(new VoteEmbed(message)).then((voteMessage) => {
+                this.awaitMajorityApproval(
+                    voteMessage as Message,
+                    this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication),
+                    this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication));
+            });
+        });
     } 
+
+    private approveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
+        userMessage.author.send(new ApplicationAcceptedEmbed());
+        userMessage.member.addRole('602391083011407903');
+
+        applicationMessage.channel.send('Application approved. Archiving in 5 seconds.').then((archiveMessage) => {
+            setTimeout(() => {
+                (archiveMessage as Message).delete();
+                this.archiveApplication(applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+
+    private denyApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
+        userMessage.author.send(new ApplicationDeniedEmbed());
+
+        applicationMessage.channel.send('Application denied. Archiving in 5 seconds.').then((archiveMessage) => {
+            setTimeout(() => {
+                (archiveMessage as Message).delete();
+                this.archiveApplication(applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+
+    private archiveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
+        this._applicationsArchivedChannel.send(new ApplicationEmbed(userMessage, questions, activeApplication));
+        applicationMessage.delete();
+        voteMessage.delete();
+        this._activeApplications.delete(userMessage.author.id);
+    }
 
     private awaitApproval(sentMessage: Message, message: Message, proceed, abort, timeout): void {
         (sentMessage as Message).react('✅').then(() => (sentMessage as Message).react('❌'));
@@ -120,10 +162,37 @@ export class ApplicationBot {
                 proceed();
             } else {
                 abort();
+                this._activeApplications.delete(message.author.id);
             }
         }).catch(() => {
             timeout();
+            this._activeApplications.delete(message.author.id);
         });
+    }
+
+    private awaitMajorityApproval(sentMessage: Message, approve, deny): void {
+        (sentMessage as Message).react('✅').then(() => (sentMessage as Message).react('❌'));
+
+        const filter = (reaction, user) => {
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌');
+        };
+
+        const collector = (sentMessage as Message).createReactionCollector(filter);
+        let minToProceed = Math.round(this._leadership.length / 2) + 1;
+        let approveCount = 0;
+        let denyCount = 0;
+
+        collector.on('collect', (reaction) => {
+            reaction.emoji.name === '✅' ? approveCount++ : denyCount++;
+
+            if (approveCount === minToProceed) {
+                approve();
+            }
+
+            if (denyCount === minToProceed) {
+                deny();
+            }
+        })
     }
 
     private awaitResponse(sentMessage: Message, message: Message, activeApplication: ApplicationState, proceed, timeout): void {
@@ -136,23 +205,25 @@ export class ApplicationBot {
             proceed();
         }).catch(() => {
             timeout();
+            this._activeApplications.delete(message.author.id);
         });
     }
 }
 
-export const lastQuestion = 13;
+export const lastQuestion = 14;
 
 export const questions = {
     '1': 'What\'s your in-game name?',
     '2': 'Class?',
     '3': 'Race?',
     '4': 'Professions?',
-    '5': 'What spec will you be playing? Link from a [talent calculator](https://classic.wowhead.com/talent-calc)',
+    '5': 'What spec will you be playing? Link from a talent calculator (https://classic.wowhead.com/talent-calc)',
     '6': 'How did you hear about Sharp and Shiny, and what made you apply?',
-    '7': 'What is your organized raiding experience?',
+    '7': 'How extensive is your organized raiding experience? The more details the better',
     '8': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
     '9': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
-    '10': 'Do you intend to get PvP ranks? (Not required)',
+    '10': 'Do you intend to get PvP ranks? (not required)',
     '11': 'We are rolling on an RP-PvE server, is this in anyway an issue for you? The guild itself is not an RP guild, but we welcome those who wish to',
-    '12': 'Calzones or Strombolis?',
+    '12': 'Do you have a referral or know anyone in the guild?',
+    '13': 'Calzones or strombolis?'
 }
