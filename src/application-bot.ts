@@ -52,6 +52,8 @@ export class ApplicationBot {
                         let activeApplication = this._activeApplications.get(message.author.id);
 
                         message.author.send(new IntroEmbed()).then((sentMessage) => {
+                            message.react('✅');
+
                             this.awaitApproval(
                                 sentMessage as Message,
                                 message,
