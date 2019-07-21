@@ -25,14 +25,14 @@ class ApplicationBot {
         this._client.login(token);
         this._client.once('ready', () => {
             console.log('Ready!');
-            this._applyChannel = this._client.channels.get('602200037770133508');
-            this._applicationsNewChannel = this._client.channels.get('602200276824490016');
-            this._applicationsArchivedChannel = this._client.channels.get('602200307489046558');
+            this._applyChannel = this._client.channels.get('593132225302626356');
+            this._applicationsNewChannel = this._client.channels.get('562848508315697153');
+            this._applicationsArchivedChannel = this._client.channels.get('565657440155205652');
         });
         this._client.on('message', message => {
             if (message.content === '/apply') {
                 if (message.channel.id === this._applyChannel.id) {
-                    this._leadership = this._client.guilds.get('602194279854505985').members.array().filter((member) => member.roles.filter((role) => role.id === '602222490781220910').array().length > 0);
+                    this._leadership = this._client.guilds.get('562783503045885962').members.array().filter((member) => member.roles.filter((role) => role.id === '562857347865903114').array().length > 0);
                     if (!this._activeApplications) {
                         this._activeApplications = new Map();
                     }
@@ -81,7 +81,7 @@ class ApplicationBot {
     }
     approveApplication(applicationMessage, voteMessage, userMessage, activeApplication) {
         userMessage.author.send(new application_accepted_embed_1.ApplicationAcceptedEmbed());
-        userMessage.member.addRole('602391083011407903');
+        userMessage.member.addRole('562857835780636672');
         applicationMessage.channel.send('Application approved. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
                 archiveMessage.delete();

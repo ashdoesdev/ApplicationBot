@@ -32,15 +32,15 @@ export class ApplicationBot {
         this._client.once('ready', () => {
             console.log('Ready!');
 
-            this._applyChannel = this._client.channels.get('602200037770133508') as TextChannel;
-            this._applicationsNewChannel = this._client.channels.get('602200276824490016') as TextChannel;
-            this._applicationsArchivedChannel = this._client.channels.get('602200307489046558') as TextChannel;
+            this._applyChannel = this._client.channels.get('593132225302626356') as TextChannel;
+            this._applicationsNewChannel = this._client.channels.get('562848508315697153') as TextChannel;
+            this._applicationsArchivedChannel = this._client.channels.get('565657440155205652') as TextChannel;
         });
 
         this._client.on('message', message => {
             if (message.content === '/apply') {
                 if (message.channel.id === this._applyChannel.id) {
-                    this._leadership = this._client.guilds.get('602194279854505985').members.array().filter((member) => member.roles.filter((role) => role.id === '602222490781220910').array().length > 0);
+                    this._leadership = this._client.guilds.get('562783503045885962').members.array().filter((member) => member.roles.filter((role) => role.id === '562857347865903114').array().length > 0);
 
                     if (!this._activeApplications) {
                         this._activeApplications = new Map<string, ApplicationState>();
@@ -122,7 +122,7 @@ export class ApplicationBot {
 
     private approveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
         userMessage.author.send(new ApplicationAcceptedEmbed());
-        userMessage.member.addRole('602391083011407903');
+        userMessage.member.addRole('562857835780636672');
 
         applicationMessage.channel.send('Application approved. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
