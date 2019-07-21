@@ -14,7 +14,6 @@ import { setTimeout } from 'timers';
 import { ApplicationAcceptedEmbed } from './Embeds/application-accepted.embed';
 import { ApplicationDeniedEmbed } from './Embeds/application-denied.embed';
 import { LastQuestionEmbed } from './Embeds/last-question.embed';
-import { ConfirmAbortEmbed } from './Embeds/confirm-abort.embed';
 
 export class ApplicationBot {
     private _client = new Client();
@@ -99,25 +98,13 @@ export class ApplicationBot {
             })
         } else {
             message.author.send(new LastQuestionEmbed()).then((sentMessage) => {
-                this.awaitApproval(
+                this.awaitConfirmation(
                     sentMessage as Message,
                     message,
                     this.finalizeApplication.bind(this, message, activeApplication),
-                    this.confirmAbort.bind(this, message, new AbortEmbed(this._leadership)),
                     this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership)));
             });
         }
-    }
-
-    private confirmAbort(message: Message, activeApplication: ApplicationState): void {
-        message.author.send(new ConfirmAbortEmbed()).then((sentMessage) => {
-            this.awaitApproval(
-                sentMessage as Message,
-                message,
-                this.sendEmbed.bind(this, message, new AbortEmbed(this._leadership)),
-                this.finalizeApplication.bind(this, message, activeApplication),
-                this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership)));
-        });
     }
 
     private finalizeApplication(message: Message, activeApplication: ApplicationState): void {
@@ -164,7 +151,7 @@ export class ApplicationBot {
     }
 
     private awaitApproval(sentMessage: Message, message: Message, proceed, abort, timeout): void {
-        sentMessage.react('✅').then(() => (sentMessage as Message).react('❌'));
+        sentMessage.react('✅').then(() => sentMessage.react('❌'));
 
         const filter = (reaction, user) => {
             return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author.id;
@@ -183,8 +170,23 @@ export class ApplicationBot {
         });
     }
 
+    private awaitConfirmation(sentMessage: Message, message: Message, proceed, timeout): void {
+        sentMessage.react('✅');
+
+        const filter = (reaction, user) => {
+            return reaction.emoji.name === '✅' && user.id === message.author.id;
+        };
+
+        sentMessage.awaitReactions(filter, { max: 1, time: 1800000, errors: ['time'] }).then((collected) => {
+            proceed();
+        }).catch(() => {
+            timeout();
+            this._activeApplications.delete(message.author.id);
+        });
+    }
+
     private awaitMajorityApproval(sentMessage: Message, approve, deny): void {
-        sentMessage.react('✅').then(() => (sentMessage as Message).react('❌'));
+        sentMessage.react('✅').then(() => sentMessage.react('❌'));
 
         const filter = (reaction, user) => {
             return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌');

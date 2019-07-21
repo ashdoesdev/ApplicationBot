@@ -16,7 +16,6 @@ const timers_1 = require("timers");
 const application_accepted_embed_1 = require("./Embeds/application-accepted.embed");
 const application_denied_embed_1 = require("./Embeds/application-denied.embed");
 const last_question_embed_1 = require("./Embeds/last-question.embed");
-const confirm_abort_embed_1 = require("./Embeds/confirm-abort.embed");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();
@@ -67,14 +66,9 @@ class ApplicationBot {
         }
         else {
             message.author.send(new last_question_embed_1.LastQuestionEmbed()).then((sentMessage) => {
-                this.awaitApproval(sentMessage, message, this.finalizeApplication.bind(this, message, activeApplication), this.confirmAbort.bind(this, message, new abort_embed_1.AbortEmbed(this._leadership)), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership)));
+                this.awaitConfirmation(sentMessage, message, this.finalizeApplication.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership)));
             });
         }
-    }
-    confirmAbort(message, activeApplication) {
-        message.author.send(new confirm_abort_embed_1.ConfirmAbortEmbed()).then((sentMessage) => {
-            this.awaitApproval(sentMessage, message, this.sendEmbed.bind(this, message, new abort_embed_1.AbortEmbed(this._leadership)), this.finalizeApplication.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership)));
-        });
     }
     finalizeApplication(message, activeApplication) {
         message.author.send(new thanks_for_applying_embed_1.ThanksForApplyingEmbed(this._leadership));
@@ -122,6 +116,18 @@ class ApplicationBot {
                 abort();
                 this._activeApplications.delete(message.author.id);
             }
+        }).catch(() => {
+            timeout();
+            this._activeApplications.delete(message.author.id);
+        });
+    }
+    awaitConfirmation(sentMessage, message, proceed, timeout) {
+        sentMessage.react('✅');
+        const filter = (reaction, user) => {
+            return reaction.emoji.name === '✅' && user.id === message.author.id;
+        };
+        sentMessage.awaitReactions(filter, { max: 1, time: 1800000, errors: ['time'] }).then((collected) => {
+            proceed();
         }).catch(() => {
             timeout();
             this._activeApplications.delete(message.author.id);
