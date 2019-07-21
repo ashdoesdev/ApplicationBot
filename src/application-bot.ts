@@ -164,13 +164,13 @@ export class ApplicationBot {
     }
 
     private awaitApproval(sentMessage: Message, message: Message, proceed, abort, timeout): void {
-        (sentMessage as Message).react('✅').then(() => (sentMessage as Message).react('❌'));
+        sentMessage.react('✅').then(() => (sentMessage as Message).react('❌'));
 
         const filter = (reaction, user) => {
             return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author.id;
         };
 
-        (sentMessage as Message).awaitReactions(filter, { max: 1, time: 1800000, errors: ['time'] }).then((collected) => {
+        sentMessage.awaitReactions(filter, { max: 1, time: 1800000, errors: ['time'] }).then((collected) => {
             if (collected.first().emoji.name === '✅') {
                 proceed();
             } else {
@@ -184,7 +184,7 @@ export class ApplicationBot {
     }
 
     private awaitMajorityApproval(sentMessage: Message, approve, deny): void {
-        (sentMessage as Message).react('✅').then(() => (sentMessage as Message).react('❌'));
+        sentMessage.react('✅').then(() => (sentMessage as Message).react('❌'));
 
         const filter = (reaction, user) => {
             return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌');
@@ -213,7 +213,7 @@ export class ApplicationBot {
             return message.author.id === response.author.id;
         };
 
-        (sentMessage as Message).channel.awaitMessages(filter, { maxMatches: 1, time: 1800000, errors: ['time'] }).then((collected) => {
+        sentMessage.channel.awaitMessages(filter, { maxMatches: 1, time: 1800000, errors: ['time'] }).then((collected) => {
             activeApplication.replies.push(Array.from(collected.entries())[0][1]);
             proceed();
         }).catch(() => {
