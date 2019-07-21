@@ -5,6 +5,6 @@ export class IntroEmbed extends RichEmbed {
         super();
 
         this.setColor('#60b5bc');
-        this.setDescription('Hey there! Thanks for your interest in applying to Sharp and Shiny. The application process will take about 15 minutes. Before starting, have you read our <#602401649343856642>?');
+        this.setDescription('Hey there! Thanks for your interest in applying to Sharp and Shiny. Before starting, have you read our <#602401649343856642>?');
     }
 }
