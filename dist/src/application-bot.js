@@ -38,14 +38,14 @@ class ApplicationBot {
                     }
                     if (!this._activeApplications.get(message.author.id)) {
                         this._activeApplications.set(message.author.id, new ApplicationState_1.ApplicationState());
+                        let activeApplication = this._activeApplications.get(message.author.id);
+                        message.author.send(new intro_embed_1.IntroEmbed()).then((sentMessage) => {
+                            this.awaitApproval(sentMessage, message, this.proceedToApplicationStart.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new abort_charter_embed_1.AbortCharterEmbed(this._leadership)), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership)));
+                        });
                     }
                     else {
                         this.sendEmbed(message, new already_applied_embed_1.AlreadyAppliedEmbed(this._leadership));
                     }
-                    let activeApplication = this._activeApplications.get(message.author.id);
-                    message.author.send(new intro_embed_1.IntroEmbed()).then((sentMessage) => {
-                        this.awaitApproval(sentMessage, message, this.proceedToApplicationStart.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new abort_charter_embed_1.AbortCharterEmbed(this._leadership)), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership)));
-                    });
                 }
             }
         });

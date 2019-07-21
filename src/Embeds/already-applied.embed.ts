@@ -9,7 +9,7 @@ export class AlreadyAppliedEmbed extends RichEmbed {
         this._leadershipList = new LeadershipListHelper(leadership);
 
         this.setColor('#60b5bc');
-        this.addField('Oops! You already have an active application', 'Thank you for applying. We will reach out to you within a week of your application submission date to discuss next steps.');
+        this.addField('Oops!', 'You already have an active application.');
         this.addField('If you have any questions, feel free to reach out to any member of our leadership', this._leadershipList.getMentions());
     }
 }
