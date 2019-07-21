@@ -7,7 +7,7 @@ class AbortCharterEmbed extends discord_js_1.RichEmbed {
         super();
         this._leadershipList = new leadership_list_helper_1.LeadershipListHelper(leadership);
         this.setColor('#60b5bc');
-        this.setDescription('Please read our charter before applying. Feel free to send another /apply in the apply channel when you are ready to begin.');
+        this.setDescription('Please read our charter before applying. Feel free to send another /apply in the <#602200037770133508> channel when you are ready to begin.');
         this.addField('Questions? Reach out to any member of our leadership', this._leadershipList.getMentions());
     }
 }
