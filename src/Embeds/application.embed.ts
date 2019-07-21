@@ -5,6 +5,7 @@ export class ApplicationEmbed extends RichEmbed {
     constructor(message: Message, questions: object, activeApplication: ApplicationState) {
         super();
 
+        this.setColor('#60b5bc');
         this.setTitle(`Application for ${message.member.displayName}`);
         this.setTimestamp();
 

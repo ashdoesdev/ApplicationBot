@@ -4,6 +4,7 @@ const discord_js_1 = require("discord.js");
 class QuestionEmbed extends discord_js_1.RichEmbed {
     constructor(question, number) {
         super();
+        this.setColor('#60b5bc');
         this.addField(`Question ${number}`, question);
     }
 }
