@@ -15,6 +15,7 @@ const vote_embed_1 = require("./Embeds/vote.embed");
 const timers_1 = require("timers");
 const application_accepted_embed_1 = require("./Embeds/application-accepted.embed");
 const application_denied_embed_1 = require("./Embeds/application-denied.embed");
+const last_question_embed_1 = require("./Embeds/last-question.embed");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();
@@ -64,10 +65,15 @@ class ApplicationBot {
             });
         }
         else {
-            message.author.send('That\'s all! Check yes to confirm you wish to apply and to submit your application.').then((sentMessage) => {
-                this.awaitApproval(sentMessage, message, this.finalizeApplication.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new abort_embed_1.AbortEmbed(this._leadership)), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership)));
+            message.author.send(new last_question_embed_1.LastQuestionEmbed()).then((sentMessage) => {
+                this.awaitApproval(sentMessage, message, this.finalizeApplication.bind(this, message, activeApplication), this.confirmAbort.bind(this, questionNumber, message, new abort_embed_1.AbortEmbed(this._leadership)), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership)));
             });
         }
+    }
+    confirmAbort(questionNumber, message, activeApplication) {
+        message.author.send('Just making sure... did you mean to hit no? Choose yes ✅ to continue to **abort** your application. Choose no ❌ if you didn\'nt mean to click no, and it will return to the previous question.').then((sentMessage) => {
+            this.awaitApproval(sentMessage, message, this.sendEmbed.bind(this, message, new abort_embed_1.AbortEmbed(this._leadership)), this.finalizeApplication.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership)));
+        });
     }
     finalizeApplication(message, activeApplication) {
         message.author.send(new thanks_for_applying_embed_1.ThanksForApplyingEmbed(this._leadership));

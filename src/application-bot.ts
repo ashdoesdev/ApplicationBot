@@ -13,6 +13,8 @@ import { VoteEmbed } from './Embeds/vote.embed';
 import { setTimeout } from 'timers';
 import { ApplicationAcceptedEmbed } from './Embeds/application-accepted.embed';
 import { ApplicationDeniedEmbed } from './Embeds/application-denied.embed';
+import { LastQuestionEmbed } from './Embeds/last-question.embed';
+import { ConfirmAbortEmbed } from './Embeds/confirm-abort.embed';
 
 export class ApplicationBot {
     private _client = new Client();
@@ -96,15 +98,26 @@ export class ApplicationBot {
                 )
             })
         } else {
-            message.author.send('That\'s all! Check yes to confirm you wish to apply and to submit your application.').then((sentMessage) => {
+            message.author.send(new LastQuestionEmbed()).then((sentMessage) => {
                 this.awaitApproval(
                     sentMessage as Message,
                     message,
                     this.finalizeApplication.bind(this, message, activeApplication),
-                    this.sendEmbed.bind(this, message, new AbortEmbed(this._leadership)),
+                    this.confirmAbort.bind(this, message, new AbortEmbed(this._leadership)),
                     this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership)));
             });
         }
+    }
+
+    private confirmAbort(message: Message, activeApplication: ApplicationState): void {
+        message.author.send(new ConfirmAbortEmbed()).then((sentMessage) => {
+            this.awaitApproval(
+                sentMessage as Message,
+                message,
+                this.sendEmbed.bind(this, message, new AbortEmbed(this._leadership)),
+                this.finalizeApplication.bind(this, message, activeApplication),
+                this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership)));
+        });
     }
 
     private finalizeApplication(message: Message, activeApplication: ApplicationState): void {
