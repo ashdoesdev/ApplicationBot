@@ -14,6 +14,7 @@ import { setTimeout } from 'timers';
 import { ApplicationAcceptedEmbed } from './Embeds/application-accepted.embed';
 import { ApplicationDeniedEmbed } from './Embeds/application-denied.embed';
 import { LastQuestionEmbed } from './Embeds/last-question.embed';
+import { ArchivedApplicationEmbed } from './Embeds/archived-application.embed';
 
 export class ApplicationBot {
     private _client = new Client();
@@ -127,7 +128,7 @@ export class ApplicationBot {
         applicationMessage.channel.send('Application approved. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
                 (archiveMessage as Message).delete();
-                this.archiveApplication(applicationMessage, voteMessage, userMessage, activeApplication);
+                this.archiveApplication(':white_check_mark:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
@@ -138,13 +139,13 @@ export class ApplicationBot {
         applicationMessage.channel.send('Application denied. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
                 (archiveMessage as Message).delete();
-                this.archiveApplication(applicationMessage, voteMessage, userMessage, activeApplication);
+                this.archiveApplication(':x:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
 
-    private archiveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
-        this._applicationsArchivedChannel.send(new ApplicationEmbed(userMessage, questions, activeApplication));
+    private archiveApplication(reaction: string, applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
+        this._applicationsArchivedChannel.send(new ArchivedApplicationEmbed(reaction, userMessage, questions, activeApplication));
         applicationMessage.delete();
         voteMessage.delete();
         this._activeApplications.delete(userMessage.author.id);
