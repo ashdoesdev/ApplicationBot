@@ -7,7 +7,6 @@
   "dependencies": {
     "discord.js": "^11.4.2",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^6.4.0",
     "typescript": "^3.4.3"
   },
   "private": true,

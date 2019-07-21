@@ -1,20 +1,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const abort_charter_embed_1 = require("./Embeds/abort-charter-embed");
-const abort_embed_1 = require("./Embeds/abort-embed");
-const application_start_embed_1 = require("./Embeds/application-start-embed");
-const intro_embed_1 = require("./Embeds/intro-embed");
-const timeout_embed_1 = require("./Embeds/timeout-embed");
+const abort_charter_embed_1 = require("./Embeds/abort-charter.embed");
+const abort_embed_1 = require("./Embeds/abort.embed");
+const application_start_embed_1 = require("./Embeds/application-start.embed");
+const intro_embed_1 = require("./Embeds/intro.embed");
+const timeout_embed_1 = require("./Embeds/timeout.embed");
 const ApplicationState_1 = require("./Models/ApplicationState");
-const question_embed_1 = require("./Embeds/question-embed");
-const thanks_for_applying_embed_1 = require("./Embeds/thanks-for-applying-embed");
-const application_embed_1 = require("./Embeds/application-embed");
-const already_applied_embed_1 = require("./Embeds/already-applied-embed");
-const vote_embed_1 = require("./Embeds/vote-embed");
+const question_embed_1 = require("./Embeds/question.embed");
+const thanks_for_applying_embed_1 = require("./Embeds/thanks-for-applying.embed");
+const application_embed_1 = require("./Embeds/application.embed");
+const already_applied_embed_1 = require("./Embeds/already-applied.embed");
+const vote_embed_1 = require("./Embeds/vote.embed");
 const timers_1 = require("timers");
-const application_accepted_embed_1 = require("./Embeds/application-accepted-embed");
-const application_denied_embed_1 = require("./Embeds/application-denied-embed");
+const application_accepted_embed_1 = require("./Embeds/application-accepted.embed");
+const application_denied_embed_1 = require("./Embeds/application-denied.embed");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();

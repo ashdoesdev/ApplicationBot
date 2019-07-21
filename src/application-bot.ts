@@ -1,18 +1,18 @@
 ﻿import { Client, GuildMember, Message, TextChannel, RichEmbed, MessageCollector, User } from 'discord.js';
-import { AbortCharterEmbed } from './Embeds/abort-charter-embed';
-import { AbortEmbed } from './Embeds/abort-embed';
-import { ApplicationStartEmbed } from './Embeds/application-start-embed';
-import { IntroEmbed } from './Embeds/intro-embed';
-import { TimeoutEmbed } from './Embeds/timeout-embed';
+import { AbortCharterEmbed } from './Embeds/abort-charter.embed';
+import { AbortEmbed } from './Embeds/abort.embed';
+import { ApplicationStartEmbed } from './Embeds/application-start.embed';
+import { IntroEmbed } from './Embeds/intro.embed';
+import { TimeoutEmbed } from './Embeds/timeout.embed';
 import { ApplicationState } from './Models/ApplicationState';
-import { QuestionEmbed } from './Embeds/question-embed';
-import { ThanksForApplyingEmbed } from './Embeds/thanks-for-applying-embed';
-import { ApplicationEmbed } from './Embeds/application-embed';
-import { AlreadyAppliedEmbed } from './Embeds/already-applied-embed';
-import { VoteEmbed } from './Embeds/vote-embed';
+import { QuestionEmbed } from './Embeds/question.embed';
+import { ThanksForApplyingEmbed } from './Embeds/thanks-for-applying.embed';
+import { ApplicationEmbed } from './Embeds/application.embed';
+import { AlreadyAppliedEmbed } from './Embeds/already-applied.embed';
+import { VoteEmbed } from './Embeds/vote.embed';
 import { setTimeout } from 'timers';
-import { ApplicationAcceptedEmbed } from './Embeds/application-accepted-embed';
-import { ApplicationDeniedEmbed } from './Embeds/application-denied-embed';
+import { ApplicationAcceptedEmbed } from './Embeds/application-accepted.embed';
+import { ApplicationDeniedEmbed } from './Embeds/application-denied.embed';
 
 export class ApplicationBot {
     private _client = new Client();

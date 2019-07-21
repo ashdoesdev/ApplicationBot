@@ -6,10 +6,8 @@
     "\\dist\\src\\Embeds",
     "\\src",
     "\\src\\Embeds",
-    "\\src\\Helpers",
-    "\\src\\Models",
-    "\\src\\Services"
+    "\\src\\Helpers"
   ],
-  "SelectedNode": "\\src\\application-bot.ts",
+  "SelectedNode": "\\package.json",
   "PreviewInSolutionExplorer": false
 }

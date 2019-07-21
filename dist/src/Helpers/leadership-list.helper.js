@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-class LeadershipList {
+class LeadershipListHelper {
     constructor(leadership) {
         this._leadership = leadership;
     }
@@ -22,4 +22,4 @@ class LeadershipList {
         return mentions;
     }
 }
-exports.LeadershipList = LeadershipList;
+exports.LeadershipListHelper = LeadershipListHelper;

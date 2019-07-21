@@ -1,6 +1,6 @@
 ﻿import { GuildMember } from "discord.js";
 
-export class LeadershipList {
+export class LeadershipListHelper {
     private _leadership: GuildMember[];
 
     constructor(leadership: GuildMember[]) {
