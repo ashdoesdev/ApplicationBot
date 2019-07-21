@@ -12,11 +12,11 @@ class LeadershipListHelper {
                     mentions += `<@${this._leadership[i].id}>`;
                 }
                 else {
-                    mentions += `or @${this._leadership[i].id}`;
+                    mentions += `or <@${this._leadership[i].id}>`;
                 }
             }
             else {
-                mentions += `@${this._leadership[i].id}, `;
+                mentions += `<@${this._leadership[i].id}>, `;
             }
         }
         return mentions;
