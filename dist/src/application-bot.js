@@ -32,7 +32,7 @@ class ApplicationBot {
         this._client.on('message', message => {
             if (message.content === '/apply') {
                 if (message.channel.id === this._applyChannel.id) {
-                    this._leadership = this._client.guilds.get('602194279854505985').members.array().filter((member) => member.roles.filter((role) => role.name === 'Leadership').array().length > 0);
+                    this._leadership = this._client.guilds.get('602194279854505985').members.array().filter((member) => member.roles.filter((role) => role.id === '602222490781220910').array().length > 0);
                     if (!this._activeApplications) {
                         this._activeApplications = new Map();
                     }
