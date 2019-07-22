@@ -52,6 +52,8 @@ export class ApplicationBot {
                         let activeApplication = this._activeApplications.get(message.author.id);
 
                         message.author.send(new IntroEmbed()).then((sentMessage) => {
+                            message.react('✅');
+
                             this.awaitApproval(
                                 sentMessage as Message,
                                 message,
@@ -189,7 +191,7 @@ export class ApplicationBot {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
 
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌');
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && this._leadership.find((member) => member.id === user.id) != null;
         };
 
         const collector = (sentMessage as Message).createReactionCollector(filter);

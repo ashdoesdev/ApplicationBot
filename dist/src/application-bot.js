@@ -40,6 +40,7 @@ class ApplicationBot {
                         this._activeApplications.set(message.author.id, new ApplicationState_1.ApplicationState());
                         let activeApplication = this._activeApplications.get(message.author.id);
                         message.author.send(new intro_embed_1.IntroEmbed()).then((sentMessage) => {
+                            message.react('✅');
                             this.awaitApproval(sentMessage, message, this.proceedToApplicationStart.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new abort_charter_embed_1.AbortCharterEmbed(this._leadership)), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership)));
                         });
                     }
@@ -137,7 +138,7 @@ class ApplicationBot {
     awaitMajorityApproval(sentMessage, approve, deny) {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌');
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && this._leadership.find((member) => member.id === user.id) != null;
         };
         const collector = sentMessage.createReactionCollector(filter);
         let minToProceed = Math.round(this._leadership.length / 2) + 1;
