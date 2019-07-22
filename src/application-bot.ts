@@ -191,7 +191,7 @@ export class ApplicationBot {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
 
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌');
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && this._leadership.find((member) => member.id === user.id) != null;
         };
 
         const collector = (sentMessage as Message).createReactionCollector(filter);

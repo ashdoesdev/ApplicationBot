@@ -138,7 +138,7 @@ class ApplicationBot {
     awaitMajorityApproval(sentMessage, approve, deny) {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌');
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && this._leadership.find((member) => member.id === user.id) != null;
         };
         const collector = sentMessage.createReactionCollector(filter);
         let minToProceed = Math.round(this._leadership.length / 2) + 1;
