@@ -33,7 +33,7 @@ export class ApplicationBot {
             console.log('Ready!');
 
             this._applyChannel = this._client.channels.get('593132225302626356') as TextChannel;
-            this._applicationsNewChannel = this._client.channels.get('562848508315697153') as TextChannel;
+            this._applicationsNewChannel = this._client.channels.get('603049612743409692') as TextChannel;
             this._applicationsArchivedChannel = this._client.channels.get('565657440155205652') as TextChannel;
         });
 

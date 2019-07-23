@@ -26,7 +26,7 @@ class ApplicationBot {
         this._client.once('ready', () => {
             console.log('Ready!');
             this._applyChannel = this._client.channels.get('593132225302626356');
-            this._applicationsNewChannel = this._client.channels.get('562848508315697153');
+            this._applicationsNewChannel = this._client.channels.get('603049612743409692');
             this._applicationsArchivedChannel = this._client.channels.get('565657440155205652');
         });
         this._client.on('message', message => {
