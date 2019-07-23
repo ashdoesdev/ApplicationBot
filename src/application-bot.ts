@@ -195,7 +195,7 @@ export class ApplicationBot {
         };
 
         const collector = (sentMessage as Message).createReactionCollector(filter);
-        let minToProceed = Math.round(this._leadership.length / 2) + 1;
+        let minToProceed = Math.round(this._leadership.length / 2);
         let approveCount = 0;
         let denyCount = 0;
 

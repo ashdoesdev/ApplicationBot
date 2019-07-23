@@ -141,7 +141,7 @@ class ApplicationBot {
             return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && this._leadership.find((member) => member.id === user.id) != null;
         };
         const collector = sentMessage.createReactionCollector(filter);
-        let minToProceed = Math.round(this._leadership.length / 2) + 1;
+        let minToProceed = Math.round(this._leadership.length / 2);
         let approveCount = 0;
         let denyCount = 0;
         collector.on('collect', (reaction) => {
