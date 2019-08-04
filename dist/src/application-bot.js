@@ -17,6 +17,7 @@ const application_accepted_embed_1 = require("./Embeds/application-accepted.embe
 const application_denied_embed_1 = require("./Embeds/application-denied.embed");
 const last_question_embed_1 = require("./Embeds/last-question.embed");
 const archived_application_embed_1 = require("./Embeds/archived-application.embed");
+const leadership_help_embed_1 = require("./Embeds/leadership-help.embed");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();
@@ -48,6 +49,18 @@ class ApplicationBot {
                     else {
                         this.sendEmbed(message, new already_applied_embed_1.AlreadyAppliedEmbed(this._leadership));
                     }
+                }
+            }
+            if (message.content === '/restart' && message.channel.type === 'dm') {
+                this._leadership = this._client.guilds.get(this._appSettings['server']).members.array().filter((member) => member.roles.filter((role) => role.id === this._appSettings['leadership']).array().length > 0);
+                if (this._activeApplications.get(message.author.id)) {
+                    this._activeApplications.delete(message.author.id);
+                    message.author.send(`Application cleared. Feel free to send another /apply in the <#${this._appSettings['apply']}> channel to try again.`);
+                    message.author.send(new leadership_help_embed_1.LeadershipHelpEmbed(this._leadership));
+                }
+                else {
+                    message.author.send('No active application.');
+                    message.author.send(new leadership_help_embed_1.LeadershipHelpEmbed(this._leadership));
                 }
             }
         });
