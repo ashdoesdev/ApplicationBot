@@ -15,7 +15,8 @@ import { ApplicationAcceptedEmbed } from './Embeds/application-accepted.embed';
 import { ApplicationDeniedEmbed } from './Embeds/application-denied.embed';
 import { LastQuestionEmbed } from './Embeds/last-question.embed';
 import { ArchivedApplicationEmbed } from './Embeds/archived-application.embed';
-import { LeadershipHelpEmbed } from './Embeds/leadership-help.embed';
+import { ApplicationClearedEmbed } from './Embeds/application-cleared.embed';
+import { NoApplicationEmbed } from './Embeds/no-application.embed';
 
 export class ApplicationBot {
     private _client = new Client();
@@ -74,13 +75,11 @@ export class ApplicationBot {
             if (message.content === '/restart' && message.channel.type === 'dm') {
                 this._leadership = this._client.guilds.get(this._appSettings['server']).members.array().filter((member) => member.roles.filter((role) => role.id === this._appSettings['leadership']).array().length > 0);
 
-                if (this._activeApplications.get(message.author.id)) {
+                if (this._activeApplications && this._activeApplications.get(message.author.id)) {
                     this._activeApplications.delete(message.author.id);
-                    message.author.send(`Application cleared. Feel free to send another /apply in the <#${this._appSettings['apply']}> channel to try again.`)
-                    message.author.send(new LeadershipHelpEmbed(this._leadership));
+                    message.author.send(new ApplicationClearedEmbed(this._leadership, this._appSettings['apply']));
                 } else {
-                    message.author.send('No active application.');
-                    message.author.send(new LeadershipHelpEmbed(this._leadership));
+                    message.author.send(new NoApplicationEmbed(this._leadership, this._appSettings['apply']));
                 }
             }
         });
@@ -225,7 +224,7 @@ export class ApplicationBot {
                 denyCount++
             }
 
-            if (reaction.emoji.name === '👌') {
+            if (reaction.emoji.name === '👍') {
                 approve();
             }
             

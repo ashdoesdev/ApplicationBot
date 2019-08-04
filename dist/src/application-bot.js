@@ -17,7 +17,8 @@ const application_accepted_embed_1 = require("./Embeds/application-accepted.embe
 const application_denied_embed_1 = require("./Embeds/application-denied.embed");
 const last_question_embed_1 = require("./Embeds/last-question.embed");
 const archived_application_embed_1 = require("./Embeds/archived-application.embed");
-const leadership_help_embed_1 = require("./Embeds/leadership-help.embed");
+const application_cleared_embed_1 = require("./Embeds/application-cleared.embed");
+const no_application_embed_1 = require("./Embeds/no-application.embed");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();
@@ -53,14 +54,12 @@ class ApplicationBot {
             }
             if (message.content === '/restart' && message.channel.type === 'dm') {
                 this._leadership = this._client.guilds.get(this._appSettings['server']).members.array().filter((member) => member.roles.filter((role) => role.id === this._appSettings['leadership']).array().length > 0);
-                if (this._activeApplications.get(message.author.id)) {
+                if (this._activeApplications && this._activeApplications.get(message.author.id)) {
                     this._activeApplications.delete(message.author.id);
-                    message.author.send(`Application cleared. Feel free to send another /apply in the <#${this._appSettings['apply']}> channel to try again.`);
-                    message.author.send(new leadership_help_embed_1.LeadershipHelpEmbed(this._leadership));
+                    message.author.send(new application_cleared_embed_1.ApplicationClearedEmbed(this._leadership, this._appSettings['apply']));
                 }
                 else {
-                    message.author.send('No active application.');
-                    message.author.send(new leadership_help_embed_1.LeadershipHelpEmbed(this._leadership));
+                    message.author.send(new no_application_embed_1.NoApplicationEmbed(this._leadership, this._appSettings['apply']));
                 }
             }
         });
@@ -165,7 +164,7 @@ class ApplicationBot {
             if (reaction.emoji.name === '❌') {
                 denyCount++;
             }
-            if (reaction.emoji.name === '👌') {
+            if (reaction.emoji.name === '👍') {
                 approve();
             }
             if (reaction.emoji.name === '👎') {
