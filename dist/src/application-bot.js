@@ -152,14 +152,25 @@ class ApplicationBot {
     awaitMajorityApproval(sentMessage, approve, deny) {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && this._leadership.find((member) => member.id === user.id) != null;
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎') && this._leadership.find((member) => member.id === user.id) != null;
         };
         const collector = sentMessage.createReactionCollector(filter);
         let minToProceed = Math.round(this._leadership.length / 2);
         let approveCount = 0;
         let denyCount = 0;
         collector.on('collect', (reaction) => {
-            reaction.emoji.name === '✅' ? approveCount++ : denyCount++;
+            if (reaction.emoji.name === '✅') {
+                approveCount++;
+            }
+            if (reaction.emoji.name === '❌') {
+                denyCount++;
+            }
+            if (reaction.emoji.name === '👌') {
+                approve();
+            }
+            if (reaction.emoji.name === '👎') {
+                deny();
+            }
             if (approveCount === minToProceed) {
                 approve();
             }

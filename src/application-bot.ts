@@ -208,7 +208,7 @@ export class ApplicationBot {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
 
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && this._leadership.find((member) => member.id === user.id) != null;
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎') && this._leadership.find((member) => member.id === user.id) != null;
         };
 
         const collector = (sentMessage as Message).createReactionCollector(filter);
@@ -217,7 +217,21 @@ export class ApplicationBot {
         let denyCount = 0;
 
         collector.on('collect', (reaction) => {
-            reaction.emoji.name === '✅' ? approveCount++ : denyCount++;
+            if (reaction.emoji.name === '✅') {
+                approveCount++
+            }
+
+            if (reaction.emoji.name === '❌') {
+                denyCount++
+            }
+
+            if (reaction.emoji.name === '👌') {
+                approve();
+            }
+            
+            if (reaction.emoji.name === '👎') {
+                deny();
+            }
 
             if (approveCount === minToProceed) {
                 approve();
@@ -226,6 +240,7 @@ export class ApplicationBot {
             if (denyCount === minToProceed) {
                 deny();
             }
+
         })
     }
 
