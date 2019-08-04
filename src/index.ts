@@ -1,5 +1,5 @@
 import { ApplicationBot } from './application-bot';
-import * as auth from '../auth.json';
+import * as appSettings from '../appSettings.dev.json';
 
 const attendanceBot = new ApplicationBot();
-attendanceBot.start(auth.token);
+attendanceBot.start(appSettings);

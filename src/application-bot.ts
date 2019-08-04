@@ -25,22 +25,25 @@ export class ApplicationBot {
     private _activeApplications: Map<string, ApplicationState>;
 
     private _leadership: GuildMember[];
+    private _appSettings;
 
-    public start(token: string): void {
-        this._client.login(token);
+    public start(appSettings): void {
+        this._appSettings = appSettings;
+
+        this._client.login(this._appSettings['token']);
 
         this._client.once('ready', () => {
             console.log('Ready!');
 
-            this._applyChannel = this._client.channels.get('593132225302626356') as TextChannel;
-            this._applicationsNewChannel = this._client.channels.get('603049612743409692') as TextChannel;
-            this._applicationsArchivedChannel = this._client.channels.get('565657440155205652') as TextChannel;
+            this._applyChannel = this._client.channels.get(this._appSettings['apply']) as TextChannel;
+            this._applicationsNewChannel = this._client.channels.get(this._appSettings['applications-new']) as TextChannel;
+            this._applicationsArchivedChannel = this._client.channels.get(this._appSettings['applications-archived']) as TextChannel;
         });
 
         this._client.on('message', message => {
             if (message.content === '/apply') {
                 if (message.channel.id === this._applyChannel.id) {
-                    this._leadership = this._client.guilds.get('562783503045885962').members.array().filter((member) => member.roles.filter((role) => role.id === '562857347865903114').array().length > 0);
+                    this._leadership = this._client.guilds.get(this._appSettings['server']).members.array().filter((member) => member.roles.filter((role) => role.id === this._appSettings['leadership']).array().length > 0);
 
                     if (!this._activeApplications) {
                         this._activeApplications = new Map<string, ApplicationState>();
@@ -51,15 +54,15 @@ export class ApplicationBot {
 
                         let activeApplication = this._activeApplications.get(message.author.id);
 
-                        message.author.send(new IntroEmbed()).then((sentMessage) => {
+                        message.author.send(new IntroEmbed(this._appSettings['charter'], this._appSettings['schedule'])).then((sentMessage) => {
                             message.react('✅');
 
                             this.awaitApproval(
                                 sentMessage as Message,
                                 message,
                                 this.proceedToApplicationStart.bind(this, message, activeApplication),
-                                this.sendEmbed.bind(this, message, new AbortCharterEmbed(this._leadership)),
-                                this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership)));
+                                this.sendEmbed.bind(this, message, new AbortCharterEmbed(this._leadership, this._appSettings['apply'])),
+                                this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply'])));
                         });
                     } else {
                         this.sendEmbed(message, new AlreadyAppliedEmbed(this._leadership));
@@ -75,8 +78,8 @@ export class ApplicationBot {
                 sentMessage as Message, 
                 message,
                 this.proceedToQuestion.bind(this, 1, message, activeApplication),
-                this.sendEmbed.bind(this, message, new AbortEmbed(this._leadership)),
-                this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership))
+                this.sendEmbed.bind(this, message, new AbortEmbed(this._leadership, this._appSettings['apply'])),
+                this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply']))
             )
         })
     }
@@ -95,7 +98,7 @@ export class ApplicationBot {
                     message,
                     activeApplication,
                     this.proceedToQuestion.bind(this, questionNumber, message, activeApplication),
-                    this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership))
+                    this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply']))
                 )
             })
         } else {
@@ -104,7 +107,7 @@ export class ApplicationBot {
                     sentMessage as Message,
                     message,
                     this.finalizeApplication.bind(this, message, activeApplication),
-                    this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership)));
+                    this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply'])));
             });
         }
     }
@@ -124,7 +127,7 @@ export class ApplicationBot {
 
     private approveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
         userMessage.author.send(new ApplicationAcceptedEmbed());
-        userMessage.member.addRole('562857835780636672');
+        userMessage.member.addRole(this._appSettings['applicant']);
 
         applicationMessage.channel.send('Application approved. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
