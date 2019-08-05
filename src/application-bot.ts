@@ -69,6 +69,11 @@ export class ApplicationBot {
                     }
                 }
             }
+
+            if (message.content === '/test' && message.channel.type === 'dm') {
+                message.author.send('Bot running.');
+            }
+
         });
     }
 
