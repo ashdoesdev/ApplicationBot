@@ -27,6 +27,10 @@ const last_question_embed_1 = require("./Embeds/last-question.embed");
 const archived_application_embed_1 = require("./Embeds/archived-application.embed");
 const messages_helper_1 = require("./Helpers/messages.helper");
 const fs = require("fs");
+const community_option_embed_1 = require("./Embeds/community-option.embed");
+const community_option_accept_embed_1 = require("./Embeds/community-option-accept.embed");
+const community_option_deny_embed_1 = require("./Embeds/community-option-deny.embed");
+const community_option_timeout_embed_1 = require("./Embeds/community-option-timeout.embed");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();
@@ -91,7 +95,7 @@ class ApplicationBot {
         message.author.send(new thanks_for_applying_embed_1.ThanksForApplyingEmbed(this._leadership));
         this._applicationsNewChannel.send(new application_embed_1.ApplicationEmbed(message, exports.questions, activeApplication)).then((applicationMessage) => {
             applicationMessage.channel.send(new vote_embed_1.VoteEmbed(message)).then((voteMessage) => {
-                this.awaitMajorityApproval(voteMessage, this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication));
+                this.awaitMajorityApproval(voteMessage, this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication));
             });
         });
         this.backUpValues(activeApplication);
@@ -113,6 +117,39 @@ class ApplicationBot {
                 archiveMessage.delete();
                 this.archiveApplication(':x:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
+        });
+    }
+    approveCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication) {
+        userMessage.author.send(new community_option_accept_embed_1.CommunityOptionAcceptEmbed());
+        userMessage.member.addRole(this._appSettings['community']);
+        applicationMessage.channel.send('Community member option approved. Archiving in 5 seconds.').then((archiveMessage) => {
+            timers_1.setTimeout(() => {
+                archiveMessage.delete();
+                this.archiveApplication(':heart: :white_check_mark:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+    denyCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication) {
+        userMessage.author.send(new community_option_deny_embed_1.CommunityOptionDenyEmbed());
+        applicationMessage.channel.send('Community member option denied. Archiving in 5 seconds.').then((archiveMessage) => {
+            timers_1.setTimeout(() => {
+                archiveMessage.delete();
+                this.archiveApplication(':heart: :x:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+    timeoutCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication) {
+        userMessage.author.send(new community_option_timeout_embed_1.CommunityOptionTimeoutEmbed());
+        applicationMessage.channel.send('Community member option denied due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
+            timers_1.setTimeout(() => {
+                archiveMessage.delete();
+                this.archiveApplication(':heart: :clock1:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+    sendCommunityMemberOption(applicationMessage, voteMessage, userMessage, activeApplication) {
+        userMessage.author.send(new community_option_embed_1.CommunityOptionEmbed()).then((sentMessage) => {
+            this.awaitApproval(sentMessage, userMessage, this.approveCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication), this.denyCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication), this.timeoutCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication));
         });
     }
     archiveApplication(reaction, applicationMessage, voteMessage, userMessage, activeApplication) {
@@ -151,15 +188,16 @@ class ApplicationBot {
             this._activeApplications.delete(message.author.id);
         });
     }
-    awaitMajorityApproval(sentMessage, approve, deny) {
-        sentMessage.react('✅').then(() => sentMessage.react('❌'));
+    awaitMajorityApproval(sentMessage, approve, deny, community) {
+        sentMessage.react('✅').then(() => sentMessage.react('❌')).then(() => sentMessage.react('❤️'));
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎') && this._leadership.find((member) => member.id === user.id) != null;
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '❤️' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '💓') && this._leadership.find((member) => member.id === user.id) != null;
         };
         const collector = sentMessage.createReactionCollector(filter);
         let minToProceed = Math.round(this._leadership.length / 2);
         let approveCount = 0;
         let denyCount = 0;
+        let communityCount = 0;
         collector.on('collect', (reaction) => {
             if (reaction.emoji.name === '✅') {
                 approveCount++;
@@ -167,17 +205,37 @@ class ApplicationBot {
             if (reaction.emoji.name === '❌') {
                 denyCount++;
             }
+            if (reaction.emoji.name === '❤️') {
+                communityCount++;
+            }
             if (reaction.emoji.name === '👍') {
                 approve();
             }
             if (reaction.emoji.name === '👎') {
                 deny();
             }
+            if (reaction.emoji.name === '💓') {
+                community();
+            }
             if (approveCount === minToProceed) {
                 approve();
             }
             if (denyCount === minToProceed) {
                 deny();
+            }
+            if (communityCount === minToProceed) {
+                community();
+            }
+        });
+        collector.on('remove', (reaction) => {
+            if (reaction.emoji.name === '✅') {
+                approveCount--;
+            }
+            if (reaction.emoji.name === '❌') {
+                denyCount--;
+            }
+            if (reaction.emoji.name === '❤️') {
+                communityCount--;
             }
         });
     }

@@ -17,6 +17,10 @@ import { LastQuestionEmbed } from './Embeds/last-question.embed';
 import { ArchivedApplicationEmbed } from './Embeds/archived-application.embed';
 import { MessagesHelper } from './Helpers/messages.helper';
 import * as fs from 'fs';
+import { CommunityOptionEmbed } from './Embeds/community-option.embed';
+import { CommunityOptionAcceptEmbed } from './Embeds/community-option-accept.embed';
+import { CommunityOptionDenyEmbed } from './Embeds/community-option-deny.embed';
+import { CommunityOptionTimeoutEmbed } from './Embeds/community-option-timeout.embed';
 
 export class ApplicationBot {
     private _client = new Client();
@@ -127,7 +131,8 @@ export class ApplicationBot {
                 this.awaitMajorityApproval(
                     voteMessage as Message,
                     this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication),
-                    this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication));
+                    this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication),
+                    this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication))
             });
         });
 
@@ -155,6 +160,51 @@ export class ApplicationBot {
                 this.archiveApplication(':x:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
+    }
+
+    private approveCommunityMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
+        userMessage.author.send(new CommunityOptionAcceptEmbed());
+        userMessage.member.addRole(this._appSettings['community']);
+
+        applicationMessage.channel.send('Community member option approved. Archiving in 5 seconds.').then((archiveMessage) => {
+            setTimeout(() => {
+                (archiveMessage as Message).delete();
+                this.archiveApplication(':heart: :white_check_mark:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+
+    private denyCommunityMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
+        userMessage.author.send(new CommunityOptionDenyEmbed());
+
+        applicationMessage.channel.send('Community member option denied. Archiving in 5 seconds.').then((archiveMessage) => {
+            setTimeout(() => {
+                (archiveMessage as Message).delete();
+                this.archiveApplication(':heart: :x:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+
+    private timeoutCommunityMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
+        userMessage.author.send(new CommunityOptionTimeoutEmbed());
+
+        applicationMessage.channel.send('Community member option denied due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
+            setTimeout(() => {
+                (archiveMessage as Message).delete();
+                this.archiveApplication(':heart: :clock1:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+
+    private sendCommunityMemberOption(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
+        userMessage.author.send(new CommunityOptionEmbed()).then((sentMessage) => {
+            this.awaitApproval(
+                sentMessage as Message,
+                userMessage,
+                this.approveCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication),
+                this.denyCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication),
+                this.timeoutCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication))
+        })
     }
 
     private archiveApplication(reaction: string, applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
@@ -199,17 +249,18 @@ export class ApplicationBot {
         });
     }
 
-    private awaitMajorityApproval(sentMessage: Message, approve, deny): void {
-        sentMessage.react('✅').then(() => sentMessage.react('❌'));
+    private awaitMajorityApproval(sentMessage: Message, approve, deny, community): void {
+        sentMessage.react('✅').then(() => sentMessage.react('❌')).then(() => sentMessage.react('❤️'));
 
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎') && this._leadership.find((member) => member.id === user.id) != null;
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '❤️' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '💓') && this._leadership.find((member) => member.id === user.id) != null;
         };
 
         const collector = (sentMessage as Message).createReactionCollector(filter);
         let minToProceed = Math.round(this._leadership.length / 2);
         let approveCount = 0;
         let denyCount = 0;
+        let communityCount = 0;
 
         collector.on('collect', (reaction) => {
             if (reaction.emoji.name === '✅') {
@@ -220,12 +271,20 @@ export class ApplicationBot {
                 denyCount++
             }
 
+            if (reaction.emoji.name === '❤️') {
+                communityCount++
+            }
+
             if (reaction.emoji.name === '👍') {
                 approve();
             }
             
             if (reaction.emoji.name === '👎') {
                 deny();
+            }
+                        
+            if (reaction.emoji.name === '💓') {
+                community();
             }
 
             if (approveCount === minToProceed) {
@@ -236,6 +295,23 @@ export class ApplicationBot {
                 deny();
             }
 
+            if (communityCount === minToProceed) {
+                community();
+            }
+        })
+
+        collector.on('remove', (reaction) => {
+            if (reaction.emoji.name === '✅') {
+                approveCount--
+            }
+
+            if (reaction.emoji.name === '❌') {
+                denyCount--
+            }
+
+            if (reaction.emoji.name === '❤️') {
+                communityCount--
+            }
         })
     }
 
@@ -273,8 +349,6 @@ export class ApplicationBot {
         fs.createWriteStream(`${dir}/application-${activeApplication.replies[0].author.id}.json`)
             .write(JSON.stringify(cleanReplies));
     }
-
-
 }
 
 export const lastQuestion = 14;
