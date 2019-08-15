@@ -1,4 +1,12 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const abort_charter_embed_1 = require("./Embeds/abort-charter.embed");
@@ -17,9 +25,12 @@ const application_accepted_embed_1 = require("./Embeds/application-accepted.embe
 const application_denied_embed_1 = require("./Embeds/application-denied.embed");
 const last_question_embed_1 = require("./Embeds/last-question.embed");
 const archived_application_embed_1 = require("./Embeds/archived-application.embed");
+const messages_helper_1 = require("./Helpers/messages.helper");
+const fs = require("fs");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();
+        this._messages = new messages_helper_1.MessagesHelper();
     }
     start(appSettings) {
         this._appSettings = appSettings;
@@ -83,6 +94,7 @@ class ApplicationBot {
                 this.awaitMajorityApproval(voteMessage, this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication));
             });
         });
+        this.backUpValues(activeApplication);
     }
     approveApplication(applicationMessage, voteMessage, userMessage, activeApplication) {
         userMessage.author.send(new application_accepted_embed_1.ApplicationAcceptedEmbed());
@@ -179,6 +191,23 @@ class ApplicationBot {
         }).catch(() => {
             timeout();
             this._activeApplications.delete(message.author.id);
+        });
+    }
+    canUseCommands(message) {
+        return message.author.id === this._appSettings['admin'];
+    }
+    backUpValues(activeApplication) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let cleanReplies = new Array();
+            for (let i = 0; i < activeApplication.replies.length; i++) {
+                cleanReplies.push([exports.questions[i + 1], activeApplication.replies[i].content]);
+            }
+            let dir = 'C:/backups';
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+            fs.createWriteStream(`${dir}/application-${activeApplication.replies[0].author.id}.json`)
+                .write(JSON.stringify(cleanReplies));
         });
     }
 }

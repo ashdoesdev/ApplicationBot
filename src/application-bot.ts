@@ -15,6 +15,8 @@ import { ApplicationAcceptedEmbed } from './Embeds/application-accepted.embed';
 import { ApplicationDeniedEmbed } from './Embeds/application-denied.embed';
 import { LastQuestionEmbed } from './Embeds/last-question.embed';
 import { ArchivedApplicationEmbed } from './Embeds/archived-application.embed';
+import { MessagesHelper } from './Helpers/messages.helper';
+import * as fs from 'fs';
 
 export class ApplicationBot {
     private _client = new Client();
@@ -26,6 +28,7 @@ export class ApplicationBot {
 
     private _leadership: GuildMember[];
     private _appSettings;
+    private _messages: MessagesHelper = new MessagesHelper();
 
     public start(appSettings): void {
         this._appSettings = appSettings;
@@ -73,7 +76,6 @@ export class ApplicationBot {
             if (message.content === '/test' && message.channel.type === 'dm') {
                 message.author.send('Bot running.');
             }
-
         });
     }
 
@@ -128,6 +130,8 @@ export class ApplicationBot {
                     this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication));
             });
         });
+
+        this.backUpValues(activeApplication);
     } 
 
     private approveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
@@ -248,6 +252,29 @@ export class ApplicationBot {
             this._activeApplications.delete(message.author.id);
         });
     }
+
+    private canUseCommands(message: Message): boolean {
+        return message.author.id === this._appSettings['admin'];
+    }
+
+    public async backUpValues(activeApplication: ApplicationState): Promise<void> {
+        let cleanReplies = new Array<[string, string]>();
+
+        for (let i = 0; i < activeApplication.replies.length; i++) {
+            cleanReplies.push([questions[i + 1], activeApplication.replies[i].content]);
+        }
+
+        let dir = 'C:/backups';
+
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        fs.createWriteStream(`${dir}/application-${activeApplication.replies[0].author.id}.json`)
+            .write(JSON.stringify(cleanReplies));
+    }
+
+
 }
 
 export const lastQuestion = 14;
