@@ -140,7 +140,7 @@ export class ApplicationBot {
     } 
 
     private approveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
-        userMessage.author.send(new ApplicationAcceptedEmbed());
+        userMessage.author.send(new ApplicationAcceptedEmbed(this._appSettings['charter'], this._appSettings['schedule'], this._appSettings['raidiquette']));
         userMessage.member.addRole(this._appSettings['applicant']);
 
         applicationMessage.channel.send('Application approved. Archiving in 5 seconds.').then((archiveMessage) => {

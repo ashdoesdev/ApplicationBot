@@ -5,6 +5,8 @@ export class ApplicationDeniedEmbed extends RichEmbed {
         super();
 
         this.setColor('#60b5bc');
-        this.addField('Application Denied', 'Please reach out if you have any questions regarding this decision. We wish you the best of luck.');
+        this.addField('Application Denied',
+            `Sorry, but your application to Sharp and Shiny has been declined.\n
+            Please check out the Bloodsail Buccaneers server community Discord if you’d like to find other guilds to apply to: https://discord.gg/SZZ369B`);
     }
 }
