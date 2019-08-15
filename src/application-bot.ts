@@ -169,7 +169,7 @@ export class ApplicationBot {
         applicationMessage.channel.send('Community member option approved. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
                 (archiveMessage as Message).delete();
-                this.archiveApplication(':heart: :white_check_mark:', applicationMessage, voteMessage, userMessage, activeApplication);
+                this.archiveApplication(':slight_smile: :white_check_mark:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
@@ -180,7 +180,7 @@ export class ApplicationBot {
         applicationMessage.channel.send('Community member option denied. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
                 (archiveMessage as Message).delete();
-                this.archiveApplication(':heart: :x:', applicationMessage, voteMessage, userMessage, activeApplication);
+                this.archiveApplication(':slight_smile: :x:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
@@ -191,7 +191,7 @@ export class ApplicationBot {
         applicationMessage.channel.send('Community member option denied due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
                 (archiveMessage as Message).delete();
-                this.archiveApplication(':heart: :clock1:', applicationMessage, voteMessage, userMessage, activeApplication);
+                this.archiveApplication(':slight_smile: :clock1:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
@@ -250,10 +250,10 @@ export class ApplicationBot {
     }
 
     private awaitMajorityApproval(sentMessage: Message, approve, deny, community): void {
-        sentMessage.react('✅').then(() => sentMessage.react('❌')).then(() => sentMessage.react('❤️'));
+        sentMessage.react('✅').then(() => sentMessage.react('❌')).then(() => sentMessage.react('🙂'));
 
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '❤️' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '💓') && this._leadership.find((member) => member.id === user.id) != null;
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '🙂' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '🙃') && this._leadership.find((member) => member.id === user.id) != null;
         };
 
         const collector = (sentMessage as Message).createReactionCollector(filter);
@@ -271,7 +271,7 @@ export class ApplicationBot {
                 denyCount++
             }
 
-            if (reaction.emoji.name === '❤️') {
+            if (reaction.emoji.name === '🙂') {
                 communityCount++
             }
 
@@ -283,7 +283,7 @@ export class ApplicationBot {
                 deny();
             }
                         
-            if (reaction.emoji.name === '💓') {
+            if (reaction.emoji.name === '🙃') {
                 community();
             }
 
@@ -346,8 +346,12 @@ export class ApplicationBot {
             fs.mkdirSync(dir, { recursive: true });
         }
 
-        fs.createWriteStream(`${dir}/application-${activeApplication.replies[0].author.id}.json`)
+        fs.createWriteStream(`${dir}/application-${activeApplication.replies[0].author.id}-${this.monthDayYearFormatted}.json`)
             .write(JSON.stringify(cleanReplies));
+    }
+
+    public get monthDayYearFormatted(): string {
+        return `${new Date().getMonth() + 1}-${new Date().getDate()}-${new Date().getFullYear()}`;
     }
 }
 

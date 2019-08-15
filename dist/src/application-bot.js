@@ -125,7 +125,7 @@ class ApplicationBot {
         applicationMessage.channel.send('Community member option approved. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
                 archiveMessage.delete();
-                this.archiveApplication(':heart: :white_check_mark:', applicationMessage, voteMessage, userMessage, activeApplication);
+                this.archiveApplication(':slight_smile: :white_check_mark:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
@@ -134,7 +134,7 @@ class ApplicationBot {
         applicationMessage.channel.send('Community member option denied. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
                 archiveMessage.delete();
-                this.archiveApplication(':heart: :x:', applicationMessage, voteMessage, userMessage, activeApplication);
+                this.archiveApplication(':slight_smile: :x:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
@@ -143,7 +143,7 @@ class ApplicationBot {
         applicationMessage.channel.send('Community member option denied due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
                 archiveMessage.delete();
-                this.archiveApplication(':heart: :clock1:', applicationMessage, voteMessage, userMessage, activeApplication);
+                this.archiveApplication(':slight_smile: :clock1:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
@@ -189,9 +189,9 @@ class ApplicationBot {
         });
     }
     awaitMajorityApproval(sentMessage, approve, deny, community) {
-        sentMessage.react('✅').then(() => sentMessage.react('❌')).then(() => sentMessage.react('❤️'));
+        sentMessage.react('✅').then(() => sentMessage.react('❌')).then(() => sentMessage.react('🙂'));
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '❤️' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '💓') && this._leadership.find((member) => member.id === user.id) != null;
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '🙂' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '🙃') && this._leadership.find((member) => member.id === user.id) != null;
         };
         const collector = sentMessage.createReactionCollector(filter);
         let minToProceed = Math.round(this._leadership.length / 2);
@@ -205,7 +205,7 @@ class ApplicationBot {
             if (reaction.emoji.name === '❌') {
                 denyCount++;
             }
-            if (reaction.emoji.name === '❤️') {
+            if (reaction.emoji.name === '🙂') {
                 communityCount++;
             }
             if (reaction.emoji.name === '👍') {
@@ -214,7 +214,7 @@ class ApplicationBot {
             if (reaction.emoji.name === '👎') {
                 deny();
             }
-            if (reaction.emoji.name === '💓') {
+            if (reaction.emoji.name === '🙃') {
                 community();
             }
             if (approveCount === minToProceed) {
@@ -264,9 +264,12 @@ class ApplicationBot {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }
-            fs.createWriteStream(`${dir}/application-${activeApplication.replies[0].author.id}.json`)
+            fs.createWriteStream(`${dir}/application-${activeApplication.replies[0].author.id}-${this.monthDayYearFormatted}.json`)
                 .write(JSON.stringify(cleanReplies));
         });
+    }
+    get monthDayYearFormatted() {
+        return `${new Date().getMonth() + 1}-${new Date().getDate()}-${new Date().getFullYear()}`;
     }
 }
 exports.ApplicationBot = ApplicationBot;
