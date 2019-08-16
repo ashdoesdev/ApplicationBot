@@ -149,7 +149,8 @@ class ApplicationBot {
     }
     sendCommunityMemberOption(applicationMessage, voteMessage, userMessage, activeApplication) {
         userMessage.author.send(new community_option_embed_1.CommunityOptionEmbed()).then((sentMessage) => {
-            this.awaitApproval(sentMessage, userMessage, this.approveCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication), this.denyCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication), this.timeoutCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication));
+            this.awaitApproval(sentMessage, userMessage, this.approveCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication), this.denyCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication), this.timeoutCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication)),
+                true;
         });
     }
     archiveApplication(reaction, applicationMessage, voteMessage, userMessage, activeApplication) {
@@ -158,7 +159,7 @@ class ApplicationBot {
         voteMessage.delete();
         this._activeApplications.delete(userMessage.author.id);
     }
-    awaitApproval(sentMessage, message, proceed, abort, timeout) {
+    awaitApproval(sentMessage, message, proceed, abort, timeout, preserveApplicationState) {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
         const filter = (reaction, user) => {
             return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author.id;
@@ -173,7 +174,9 @@ class ApplicationBot {
             }
         }).catch(() => {
             timeout();
-            this._activeApplications.delete(message.author.id);
+            if (!preserveApplicationState) {
+                this._activeApplications.delete(message.author.id);
+            }
         });
     }
     awaitConfirmation(sentMessage, message, proceed, timeout) {
@@ -194,19 +197,16 @@ class ApplicationBot {
             return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '🙂' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '🙃') && this._leadership.find((member) => member.id === user.id) != null;
         };
         const collector = sentMessage.createReactionCollector(filter);
-        let minToProceed = Math.round(this._leadership.length / 2);
-        let approveCount = 0;
-        let denyCount = 0;
-        let communityCount = 0;
+        let minToProceed = Math.round(this._leadership.length / 2) + 1;
         collector.on('collect', (reaction) => {
-            if (reaction.emoji.name === '✅') {
-                approveCount++;
+            if (reaction.emoji.name === '✅' && reaction.users.array().length >= minToProceed) {
+                approve();
             }
-            if (reaction.emoji.name === '❌') {
-                denyCount++;
+            if (reaction.emoji.name === '❌' && reaction.users.array().length >= minToProceed) {
+                deny();
             }
-            if (reaction.emoji.name === '🙂') {
-                communityCount++;
+            if (reaction.emoji.name === '🙂' && reaction.users.array().length >= minToProceed) {
+                community();
             }
             if (reaction.emoji.name === '👍') {
                 approve();
@@ -216,26 +216,6 @@ class ApplicationBot {
             }
             if (reaction.emoji.name === '🙃') {
                 community();
-            }
-            if (approveCount === minToProceed) {
-                approve();
-            }
-            if (denyCount === minToProceed) {
-                deny();
-            }
-            if (communityCount === minToProceed) {
-                community();
-            }
-        });
-        collector.on('remove', (reaction) => {
-            if (reaction.emoji.name === '✅') {
-                approveCount--;
-            }
-            if (reaction.emoji.name === '❌') {
-                denyCount--;
-            }
-            if (reaction.emoji.name === '❤️') {
-                communityCount--;
             }
         });
     }

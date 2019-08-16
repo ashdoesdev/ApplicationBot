@@ -203,7 +203,8 @@ export class ApplicationBot {
                 userMessage,
                 this.approveCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication),
                 this.denyCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication),
-                this.timeoutCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication))
+                this.timeoutCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication)),
+                true
         })
     }
 
@@ -214,7 +215,7 @@ export class ApplicationBot {
         this._activeApplications.delete(userMessage.author.id);
     }
 
-    private awaitApproval(sentMessage: Message, message: Message, proceed, abort, timeout): void {
+    private awaitApproval(sentMessage: Message, message: Message, proceed, abort, timeout, preserveApplicationState?: boolean): void {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
 
         const filter = (reaction, user) => {
@@ -230,7 +231,9 @@ export class ApplicationBot {
             }
         }).catch(() => {
             timeout();
-            this._activeApplications.delete(message.author.id);
+            if (!preserveApplicationState) {
+                this._activeApplications.delete(message.author.id);
+            }
         });
     }
 
@@ -257,22 +260,19 @@ export class ApplicationBot {
         };
 
         const collector = (sentMessage as Message).createReactionCollector(filter);
-        let minToProceed = Math.round(this._leadership.length / 2);
-        let approveCount = 0;
-        let denyCount = 0;
-        let communityCount = 0;
+        let minToProceed = Math.round(this._leadership.length / 2) + 1;
 
         collector.on('collect', (reaction) => {
-            if (reaction.emoji.name === '✅') {
-                approveCount++
+            if (reaction.emoji.name === '✅' && reaction.users.array().length >= minToProceed) {
+                approve();
             }
 
-            if (reaction.emoji.name === '❌') {
-                denyCount++
+            if (reaction.emoji.name === '❌' && reaction.users.array().length >= minToProceed) {
+                deny();
             }
 
-            if (reaction.emoji.name === '🙂') {
-                communityCount++
+            if (reaction.emoji.name === '🙂' && reaction.users.array().length >= minToProceed) {
+                community();
             }
 
             if (reaction.emoji.name === '👍') {
@@ -285,32 +285,6 @@ export class ApplicationBot {
                         
             if (reaction.emoji.name === '🙃') {
                 community();
-            }
-
-            if (approveCount === minToProceed) {
-                approve();
-            }
-
-            if (denyCount === minToProceed) {
-                deny();
-            }
-
-            if (communityCount === minToProceed) {
-                community();
-            }
-        })
-
-        collector.on('remove', (reaction) => {
-            if (reaction.emoji.name === '✅') {
-                approveCount--
-            }
-
-            if (reaction.emoji.name === '❌') {
-                denyCount--
-            }
-
-            if (reaction.emoji.name === '❤️') {
-                communityCount--
             }
         })
     }

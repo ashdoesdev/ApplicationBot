@@ -5,7 +5,7 @@ class ApplicationAcceptedEmbed extends discord_js_1.RichEmbed {
     constructor(charterChannel, scheduleChannel, raidiquetteChannel) {
         super();
         this.setColor('#60b5bc');
-        this.addField('Application Accepted!', `Welcome to Sharp and Shiny! Your application looks great and we’d love to share our Classic experience with you. :)\n
+        this.addField('Application Accepted!', `Welcome to Sharp and Shiny! Your application looks great and we’d love to share our Classic experience with you. 🙂\n
             If you haven’t already, please take a few minutes to read through the <#${charterChannel}>, <#${scheduleChannel}>, and <#${raidiquetteChannel}> channels at the top of our Discord - these outline how the guild will run and what expectations we have of our members.\n
             You’ll notice we have a ton of chat channels for a whole slew of topics, including individual channels for each class. You’ll find most important information, including raid and class guides, pinned in each channel, which is accessed by clicking the pin icon at the top of Discord.\n
             If you have any further questions, please don’t hesitate to reach out to an officer!\n

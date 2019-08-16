@@ -6,7 +6,7 @@ export class CommunityOptionAcceptEmbed extends RichEmbed {
 
         this.setColor('#60b5bc');
         this.addField('Accepted as Community Member',
-            `Welcome to Sharp and Shiny! We are super excited to have you as part of our Community for Classic. :)\n
+            `Welcome to Sharp and Shiny! We are super excited to have you as part of our Community for Classic. 🙂\n
             Please remember to follow our code of conduct while in the guild and we’ll get along just fine:`);
         this.addField('Respect', 'Members of Sharp and Shiny are expected to show respect towards one another, as well as towards those outside the guild. This includes respecting the fact that we are on an RP server and the people, in-guild or out, that participate. Members will also keep political discussions to a minimum in guild chat - you are more than welcome to discuss privately in tells or your own channel.');
         this.addField('Maturity', 'Members of Sharp and Shiny are expected to maintain a mature attitude, particularly in regards to class nerfs, sitting out during raids, and promotions/demotions. Members should be able to handle constructive criticism — constructively.');
