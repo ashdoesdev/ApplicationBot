@@ -4,14 +4,10 @@
     "\\dist",
     "\\dist\\src",
     "\\dist\\src\\Embeds",
-    "\\node_modules",
-    "\\node_modules\\discord.js",
-    "\\node_modules\\discord.js\\src",
-    "\\node_modules\\discord.js\\src\\structures",
     "\\src",
     "\\src\\Embeds",
     "\\src\\Helpers"
   ],
-  "SelectedNode": "\\appSettings.prod.json",
+  "SelectedNode": "\\src\\Embeds\\community-option-timeout.embed.ts",
   "PreviewInSolutionExplorer": false
 }

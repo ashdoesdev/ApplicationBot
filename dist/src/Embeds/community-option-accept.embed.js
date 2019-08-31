@@ -11,7 +11,7 @@ class CommunityOptionAcceptEmbed extends discord_js_1.RichEmbed {
         this.addField('Maturity', 'Members of Sharp and Shiny are expected to maintain a mature attitude, particularly in regards to class nerfs, sitting out during raids, and promotions/demotions. Members should be able to handle constructive criticism — constructively.');
         this.addField('Equal Opportunity', 'Members of Sharp and Shiny will be expected to treat each other without discrimination. Especially on the basis of their sex, race, or age.\n');
         this.addField('If you have any questions or concerns, please feel free to reach out to an officer! This includes being considered to be added to the raid roster.', 'Here are a few other links to get you settled in:');
-        this.addField('Sharp and Shiny guild roster:', 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_6NrVWMM3vPDuDTA_e6JCj7QbokP-pvbbyC_MKZW82S5R6jl4Ox3JomRnoRV5oxvdfsW-0poB_RcS/pubhtml?gid=0&single=true');
+        this.addField('Sharp and Shiny guild roster:', 'https://tinyurl.com/y2wq4alq');
         this.addField('Our Battle.net guild group:', 'https://us.blizzard.com/invite/YeaNADaIlwB');
         this.addField('The Bloodsail Buccaneers server community Discord:', 'https://discord.gg/SZZ369B');
     }

@@ -10,7 +10,7 @@ class ApplicationAcceptedEmbed extends discord_js_1.RichEmbed {
             You’ll notice we have a ton of chat channels for a whole slew of topics, including individual channels for each class. You’ll find most important information, including raid and class guides, pinned in each channel, which is accessed by clicking the pin icon at the top of Discord.\n
             If you have any further questions, please don’t hesitate to reach out to an officer!\n
             Here are a few other links to get you settled in:`);
-        this.addField('Sharp and Shiny guild roster:', 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_6NrVWMM3vPDuDTA_e6JCj7QbokP-pvbbyC_MKZW82S5R6jl4Ox3JomRnoRV5oxvdfsW-0poB_RcS/pubhtml?gid=0&single=true');
+        this.addField('Sharp and Shiny guild roster:', 'https://tinyurl.com/y2wq4alq');
         this.addField('Our Battle.net guild group:', 'https://us.blizzard.com/invite/YeaNADaIlwB');
         this.addField('The Bloodsail Buccaneers server community Discord:', 'https://discord.gg/SZZ369B');
     }

@@ -31,6 +31,7 @@ const community_option_embed_1 = require("./Embeds/community-option.embed");
 const community_option_accept_embed_1 = require("./Embeds/community-option-accept.embed");
 const community_option_deny_embed_1 = require("./Embeds/community-option-deny.embed");
 const community_option_timeout_embed_1 = require("./Embeds/community-option-timeout.embed");
+const backup_application_embed_1 = require("./Embeds/backup-application.embed");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();
@@ -67,6 +68,25 @@ class ApplicationBot {
             }
             if (message.content === '/test' && message.channel.type === 'dm') {
                 message.author.send('Bot running.');
+            }
+            if (message.content.startsWith('/restore') && message.channel.type === 'dm' && message.author.id === this._appSettings['admin']) {
+                let memberId = message.content.match(/"((?:\\.|[^"\\])*)"/)[0].replace(/"/g, '');
+                this._guildMembers = this._client.guilds.get(this._appSettings['server']).members.array();
+                let fullMember = this.matchMemberFromId(this._guildMembers, memberId);
+                if (fullMember) {
+                    let path = message.content.replace('/restore', '').replace(memberId, '').replace(/"/g, '').trim();
+                    fs.createReadStream(path)
+                        .on('data', (data) => {
+                        let backup = JSON.parse(data);
+                        this._applicationsArchivedChannel.send(new backup_application_embed_1.BackupApplicationEmbed(backup, fullMember));
+                    })
+                        .on('error', () => {
+                        message.channel.send('File not found.');
+                    });
+                }
+                else {
+                    message.channel.send('Member not found.');
+                }
             }
         });
     }
@@ -119,38 +139,44 @@ class ApplicationBot {
             }, 5000);
         });
     }
-    approveCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication) {
+    approveCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
         userMessage.author.send(new community_option_accept_embed_1.CommunityOptionAcceptEmbed());
         userMessage.member.addRole(this._appSettings['community']);
         applicationMessage.channel.send('Community member option approved. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
+                confirmationMessage.delete();
                 archiveMessage.delete();
                 this.archiveApplication(':slight_smile: :white_check_mark:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
-    denyCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication) {
+    denyCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
         userMessage.author.send(new community_option_deny_embed_1.CommunityOptionDenyEmbed());
         applicationMessage.channel.send('Community member option denied. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
+                confirmationMessage.delete();
                 archiveMessage.delete();
                 this.archiveApplication(':slight_smile: :x:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
-    timeoutCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication) {
+    timeoutCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
         userMessage.author.send(new community_option_timeout_embed_1.CommunityOptionTimeoutEmbed());
         applicationMessage.channel.send('Community member option denied due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
+                confirmationMessage.delete();
                 archiveMessage.delete();
                 this.archiveApplication(':slight_smile: :clock1:', applicationMessage, voteMessage, userMessage, activeApplication);
             }, 5000);
         });
     }
     sendCommunityMemberOption(applicationMessage, voteMessage, userMessage, activeApplication) {
-        userMessage.author.send(new community_option_embed_1.CommunityOptionEmbed()).then((sentMessage) => {
-            this.awaitApproval(sentMessage, userMessage, this.approveCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication), this.denyCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication), this.timeoutCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication)),
-                true;
+        return __awaiter(this, void 0, void 0, function* () {
+            let confirmationMessage = yield applicationMessage.channel.send('Community member proposal sent. Awaiting reply.');
+            userMessage.author.send(new community_option_embed_1.CommunityOptionEmbed()).then((sentMessage) => {
+                this.awaitCommunityApproval(sentMessage, userMessage, this.approveCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage), this.denyCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage), this.timeoutCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage)),
+                    true;
+            });
         });
     }
     archiveApplication(reaction, applicationMessage, voteMessage, userMessage, activeApplication) {
@@ -165,6 +191,26 @@ class ApplicationBot {
             return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author.id;
         };
         sentMessage.awaitReactions(filter, { max: 1, time: 1800000, errors: ['time'] }).then((collected) => {
+            if (collected.first().emoji.name === '✅') {
+                proceed();
+            }
+            else {
+                abort();
+                this._activeApplications.delete(message.author.id);
+            }
+        }).catch(() => {
+            timeout();
+            if (!preserveApplicationState) {
+                this._activeApplications.delete(message.author.id);
+            }
+        });
+    }
+    awaitCommunityApproval(sentMessage, message, proceed, abort, timeout, preserveApplicationState) {
+        sentMessage.react('✅').then(() => sentMessage.react('❌'));
+        const filter = (reaction, user) => {
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author.id;
+        };
+        sentMessage.awaitReactions(filter, { max: 1, time: 86400000, errors: ['time'] }).then((collected) => {
             if (collected.first().emoji.name === '✅') {
                 proceed();
             }
@@ -201,21 +247,27 @@ class ApplicationBot {
         collector.on('collect', (reaction) => {
             if (reaction.emoji.name === '✅' && reaction.users.array().length >= minToProceed) {
                 approve();
+                collector.stop();
             }
             if (reaction.emoji.name === '❌' && reaction.users.array().length >= minToProceed) {
                 deny();
+                collector.stop();
             }
             if (reaction.emoji.name === '🙂' && reaction.users.array().length >= minToProceed) {
                 community();
+                collector.stop();
             }
             if (reaction.emoji.name === '👍') {
                 approve();
+                collector.stop();
             }
             if (reaction.emoji.name === '👎') {
                 deny();
+                collector.stop();
             }
             if (reaction.emoji.name === '🙃') {
                 community();
+                collector.stop();
             }
         });
     }
@@ -240,7 +292,7 @@ class ApplicationBot {
             for (let i = 0; i < activeApplication.replies.length; i++) {
                 cleanReplies.push([exports.questions[i + 1], activeApplication.replies[i].content]);
             }
-            let dir = 'C:/backups';
+            let dir = 'backups';
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }
@@ -250,6 +302,9 @@ class ApplicationBot {
     }
     get monthDayYearFormatted() {
         return `${new Date().getMonth() + 1}-${new Date().getDate()}-${new Date().getFullYear()}`;
+    }
+    matchMemberFromId(members, memberId) {
+        return members.find((x) => x.id === memberId);
     }
 }
 exports.ApplicationBot = ApplicationBot;
