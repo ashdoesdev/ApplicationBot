@@ -22,6 +22,10 @@ import { CommunityOptionAcceptEmbed } from './Embeds/community-option-accept.emb
 import { CommunityOptionDenyEmbed } from './Embeds/community-option-deny.embed';
 import { CommunityOptionTimeoutEmbed } from './Embeds/community-option-timeout.embed';
 import { BackupApplicationEmbed } from './Embeds/backup-application.embed';
+import { ReserveOptionAcceptEmbed } from './Embeds/reserve-option-accept.embed';
+import { ReserveOptionDenyEmbed } from './Embeds/reserve-option-deny.embed';
+import { ReserveOptionTimeoutEmbed } from './Embeds/reserve-option-timeout.embed';
+import { ReserveOptionEmbed } from './Embeds/reserve-option.embed';
 
 export class ApplicationBot {
     private _client = new Client();
@@ -156,7 +160,8 @@ export class ApplicationBot {
                     voteMessage as Message,
                     this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication),
                     this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication),
-                    this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication))
+                    this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication),
+                    this.sendReserveMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication))
             });
         });
 
@@ -224,10 +229,10 @@ export class ApplicationBot {
     }
 
     private async sendCommunityMemberOption(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): Promise<void> {
-        let confirmationMessage = await applicationMessage.channel.send('Community member proposal sent. Awaiting reply.');
+        let confirmationMessage = await applicationMessage.channel.send(`Community member proposal sent to ${userMessage.author.username}. Awaiting reply.`);
 
         userMessage.author.send(new CommunityOptionEmbed()).then((sentMessage) => {
-            this.awaitCommunityApproval(
+            this.awaitRoleApproval(
                 sentMessage as Message,
                 userMessage,
                 this.approveCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage),
@@ -236,6 +241,58 @@ export class ApplicationBot {
                 true
         })
     }
+
+    private approveReserveMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState, confirmationMessage: Message): void {
+        userMessage.author.send(new ReserveOptionAcceptEmbed(this._appSettings['charter'], this._appSettings['schedule'], this._appSettings['raidiquette']));
+        userMessage.member.addRole(this._appSettings['reserve']);
+
+        applicationMessage.channel.send('Reserve member option approved. Archiving in 5 seconds.').then((archiveMessage) => {
+            setTimeout(() => {
+                (confirmationMessage as Message).delete();
+                (archiveMessage as Message).delete();
+                this.archiveApplication(':muscle: :white_check_mark:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+
+    private denyReserveMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState, confirmationMessage: Message): void {
+        userMessage.author.send(new ReserveOptionDenyEmbed());
+
+        applicationMessage.channel.send('Reserve member option denied. Archiving in 5 seconds.').then((archiveMessage) => {
+            setTimeout(() => {
+                (confirmationMessage as Message).delete();
+                (archiveMessage as Message).delete();
+                this.archiveApplication(':muscle: :x:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+
+    private timeoutReserveMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState, confirmationMessage: Message): void {
+        userMessage.author.send(new ReserveOptionTimeoutEmbed());
+
+        applicationMessage.channel.send('Reserve member option denied due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
+            setTimeout(() => {
+                (confirmationMessage as Message).delete();
+                (archiveMessage as Message).delete();
+                this.archiveApplication(':muscle: :clock1:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+
+    private async sendReserveMemberOption(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): Promise<void> {
+        let confirmationMessage = await applicationMessage.channel.send(`Reserve member proposal sent to ${userMessage.author.username}. Awaiting reply.`);
+
+        userMessage.author.send(new ReserveOptionEmbed()).then((sentMessage) => {
+            this.awaitRoleApproval(
+                sentMessage as Message,
+                userMessage,
+                this.approveReserveMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage),
+                this.denyReserveMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage),
+                this.timeoutReserveMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage)),
+                true
+        })
+    }
+
 
     private archiveApplication(reaction: string, applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
         this._applicationsArchivedChannel.send(new ArchivedApplicationEmbed(reaction, userMessage, questions, activeApplication));
@@ -266,7 +323,7 @@ export class ApplicationBot {
         });
     }
 
-    private awaitCommunityApproval(sentMessage: Message, message: Message, proceed, abort, timeout, preserveApplicationState?: boolean): void {
+    private awaitRoleApproval(sentMessage: Message, message: Message, proceed, abort, timeout, preserveApplicationState?: boolean): void {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
 
         const filter = (reaction, user) => {
@@ -303,11 +360,11 @@ export class ApplicationBot {
         });
     }
 
-    private awaitMajorityApproval(sentMessage: Message, approve, deny, community): void {
-        sentMessage.react('✅').then(() => sentMessage.react('❌')).then(() => sentMessage.react('🙂'));
+    private awaitMajorityApproval(sentMessage: Message, approve, deny, community, reserve): void {
+        sentMessage.react('✅').then(() => sentMessage.react('❌')).then(() => sentMessage.react('💪')).then(() => sentMessage.react('🙂'));
 
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '🙂' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '🙃') && this._leadership.find((member) => member.id === user.id) != null;
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '💪' || reaction.emoji.name === '🙂' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '🙃' || reaction.emoji.name === '🍴') && this._leadership.find((member) => member.id === user.id) != null;
         };
 
         const collector = (sentMessage as Message).createReactionCollector(filter);
@@ -328,6 +385,11 @@ export class ApplicationBot {
                 community();
                 collector.stop();
             }
+            
+            if (reaction.emoji.name === '💪' && reaction.users.array().length >= minToProceed) {
+                reserve();
+                collector.stop();
+            }
 
             if (reaction.emoji.name === '👍') {
                 approve();
@@ -341,6 +403,11 @@ export class ApplicationBot {
                         
             if (reaction.emoji.name === '🙃') {
                 community();
+                collector.stop();
+            }                    
+            
+            if (reaction.emoji.name === '🍴') {
+                reserve();
                 collector.stop();
             }
         })
@@ -391,7 +458,7 @@ export class ApplicationBot {
 
 }
 
-export const lastQuestion = 14;
+export const lastQuestion = 15;
 
 export const questions = {
     '1': 'What\'s your in-game name?',
@@ -399,12 +466,13 @@ export const questions = {
     '3': 'Race?',
     '4': 'Professions?',
     '5': 'What spec will you be playing? Link from a talent calculator (https://classic.wowhead.com/talent-calc)',
-    '6': 'How did you hear about Sharp and Shiny, and what made you apply?',
-    '7': 'How extensive is your organized raiding experience? The more details the better',
-    '8': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
-    '9': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
-    '10': 'Do you intend to get PvP ranks? (not required)',
-    '11': 'We are rolling on an RP-PvE server, is this in anyway an issue for you? The guild itself is not an RP guild, but we welcome those who wish to',
-    '12': 'Do you have a referral or know anyone in the guild?',
-    '13': 'Calzones or strombolis?'
+    '6': 'Are you coming from another guild? If so, which guild and why are you leaving?',
+    '7': 'How did you hear about Sharp and Shiny, and what made you apply?',
+    '8': 'How extensive is your organized raiding experience? The more details the better',
+    '9': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
+    '10': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
+    '11': 'Do you intend to get PvP ranks? (not required)',
+    '12': 'We are on an RP-PvE server, but as a guild, we do not participate in RP. Is this in anyway an issue?',
+    '13': 'Do you have a referral or know anyone in the guild?',
+    '14': 'Calzones or strombolis?'
 }

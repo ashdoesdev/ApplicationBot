@@ -17,10 +17,19 @@ class ArchivedApplicationEmbed extends discord_js_1.RichEmbed {
             reactionMessage = '**Status:** Offered community member position and accepted';
         }
         else if (reaction === ':slight_smile: :x:') {
-            reactionMessage = '**Status:** Offered community member position but denied';
+            reactionMessage = '**Status:** Offered community member position but declined';
         }
         else if (reaction === ':slight_smile: :clock1:') {
-            reactionMessage = '**Status:** Offered community member position but offer timed out';
+            reactionMessage = '**Status:** Offered community member position but didn\'t hear back';
+        }
+        else if (reaction === ':muscle: :white_check_mark:') {
+            reactionMessage = '**Status:** Offered reserve member position and accepted';
+        }
+        else if (reaction === ':muscle: :x:') {
+            reactionMessage = '**Status:** Offered reserve member position but declined';
+        }
+        else if (reaction === ':muscle: :clock1:') {
+            reactionMessage = '**Status:** Offered reserve member position but didn\'t hear back';
         }
         else {
             reactionMessage = '**Status:** Unknown';

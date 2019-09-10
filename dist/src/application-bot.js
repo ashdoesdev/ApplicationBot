@@ -32,6 +32,10 @@ const community_option_accept_embed_1 = require("./Embeds/community-option-accep
 const community_option_deny_embed_1 = require("./Embeds/community-option-deny.embed");
 const community_option_timeout_embed_1 = require("./Embeds/community-option-timeout.embed");
 const backup_application_embed_1 = require("./Embeds/backup-application.embed");
+const reserve_option_accept_embed_1 = require("./Embeds/reserve-option-accept.embed");
+const reserve_option_deny_embed_1 = require("./Embeds/reserve-option-deny.embed");
+const reserve_option_timeout_embed_1 = require("./Embeds/reserve-option-timeout.embed");
+const reserve_option_embed_1 = require("./Embeds/reserve-option.embed");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();
@@ -115,7 +119,7 @@ class ApplicationBot {
         message.author.send(new thanks_for_applying_embed_1.ThanksForApplyingEmbed(this._leadership));
         this._applicationsNewChannel.send(new application_embed_1.ApplicationEmbed(message, exports.questions, activeApplication)).then((applicationMessage) => {
             applicationMessage.channel.send(new vote_embed_1.VoteEmbed(message)).then((voteMessage) => {
-                this.awaitMajorityApproval(voteMessage, this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication));
+                this.awaitMajorityApproval(voteMessage, this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendReserveMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication));
             });
         });
         this.backUpValues(activeApplication);
@@ -172,9 +176,49 @@ class ApplicationBot {
     }
     sendCommunityMemberOption(applicationMessage, voteMessage, userMessage, activeApplication) {
         return __awaiter(this, void 0, void 0, function* () {
-            let confirmationMessage = yield applicationMessage.channel.send('Community member proposal sent. Awaiting reply.');
+            let confirmationMessage = yield applicationMessage.channel.send(`Community member proposal sent to ${userMessage.author.username}. Awaiting reply.`);
             userMessage.author.send(new community_option_embed_1.CommunityOptionEmbed()).then((sentMessage) => {
-                this.awaitCommunityApproval(sentMessage, userMessage, this.approveCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage), this.denyCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage), this.timeoutCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage)),
+                this.awaitRoleApproval(sentMessage, userMessage, this.approveCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage), this.denyCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage), this.timeoutCommunityMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage)),
+                    true;
+            });
+        });
+    }
+    approveReserveMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
+        userMessage.author.send(new reserve_option_accept_embed_1.ReserveOptionAcceptEmbed(this._appSettings['charter'], this._appSettings['schedule'], this._appSettings['raidiquette']));
+        userMessage.member.addRole(this._appSettings['reserve']);
+        applicationMessage.channel.send('Reserve member option approved. Archiving in 5 seconds.').then((archiveMessage) => {
+            timers_1.setTimeout(() => {
+                confirmationMessage.delete();
+                archiveMessage.delete();
+                this.archiveApplication(':muscle: :white_check_mark:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+    denyReserveMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
+        userMessage.author.send(new reserve_option_deny_embed_1.ReserveOptionDenyEmbed());
+        applicationMessage.channel.send('Reserve member option denied. Archiving in 5 seconds.').then((archiveMessage) => {
+            timers_1.setTimeout(() => {
+                confirmationMessage.delete();
+                archiveMessage.delete();
+                this.archiveApplication(':muscle: :x:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+    timeoutReserveMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
+        userMessage.author.send(new reserve_option_timeout_embed_1.ReserveOptionTimeoutEmbed());
+        applicationMessage.channel.send('Reserve member option denied due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
+            timers_1.setTimeout(() => {
+                confirmationMessage.delete();
+                archiveMessage.delete();
+                this.archiveApplication(':muscle: :clock1:', applicationMessage, voteMessage, userMessage, activeApplication);
+            }, 5000);
+        });
+    }
+    sendReserveMemberOption(applicationMessage, voteMessage, userMessage, activeApplication) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let confirmationMessage = yield applicationMessage.channel.send(`Reserve member proposal sent to ${userMessage.author.username}. Awaiting reply.`);
+            userMessage.author.send(new reserve_option_embed_1.ReserveOptionEmbed()).then((sentMessage) => {
+                this.awaitRoleApproval(sentMessage, userMessage, this.approveReserveMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage), this.denyReserveMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage), this.timeoutReserveMember.bind(this, applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage)),
                     true;
             });
         });
@@ -205,7 +249,7 @@ class ApplicationBot {
             }
         });
     }
-    awaitCommunityApproval(sentMessage, message, proceed, abort, timeout, preserveApplicationState) {
+    awaitRoleApproval(sentMessage, message, proceed, abort, timeout, preserveApplicationState) {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
         const filter = (reaction, user) => {
             return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author.id;
@@ -237,10 +281,10 @@ class ApplicationBot {
             this._activeApplications.delete(message.author.id);
         });
     }
-    awaitMajorityApproval(sentMessage, approve, deny, community) {
-        sentMessage.react('✅').then(() => sentMessage.react('❌')).then(() => sentMessage.react('🙂'));
+    awaitMajorityApproval(sentMessage, approve, deny, community, reserve) {
+        sentMessage.react('✅').then(() => sentMessage.react('❌')).then(() => sentMessage.react('💪')).then(() => sentMessage.react('🙂'));
         const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '🙂' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '🙃') && this._leadership.find((member) => member.id === user.id) != null;
+            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌' || reaction.emoji.name === '💪' || reaction.emoji.name === '🙂' || reaction.emoji.name === '👍' || reaction.emoji.name === '👎' || reaction.emoji.name === '🙃' || reaction.emoji.name === '🍴') && this._leadership.find((member) => member.id === user.id) != null;
         };
         const collector = sentMessage.createReactionCollector(filter);
         let minToProceed = Math.round(this._leadership.length / 2) + 1;
@@ -257,6 +301,10 @@ class ApplicationBot {
                 community();
                 collector.stop();
             }
+            if (reaction.emoji.name === '💪' && reaction.users.array().length >= minToProceed) {
+                reserve();
+                collector.stop();
+            }
             if (reaction.emoji.name === '👍') {
                 approve();
                 collector.stop();
@@ -267,6 +315,10 @@ class ApplicationBot {
             }
             if (reaction.emoji.name === '🙃') {
                 community();
+                collector.stop();
+            }
+            if (reaction.emoji.name === '🍴') {
+                reserve();
                 collector.stop();
             }
         });
@@ -308,19 +360,20 @@ class ApplicationBot {
     }
 }
 exports.ApplicationBot = ApplicationBot;
-exports.lastQuestion = 14;
+exports.lastQuestion = 15;
 exports.questions = {
     '1': 'What\'s your in-game name?',
     '2': 'Class?',
     '3': 'Race?',
     '4': 'Professions?',
     '5': 'What spec will you be playing? Link from a talent calculator (https://classic.wowhead.com/talent-calc)',
-    '6': 'How did you hear about Sharp and Shiny, and what made you apply?',
-    '7': 'How extensive is your organized raiding experience? The more details the better',
-    '8': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
-    '9': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
-    '10': 'Do you intend to get PvP ranks? (not required)',
-    '11': 'We are rolling on an RP-PvE server, is this in anyway an issue for you? The guild itself is not an RP guild, but we welcome those who wish to',
-    '12': 'Do you have a referral or know anyone in the guild?',
-    '13': 'Calzones or strombolis?'
+    '6': 'Are you coming from another guild? If so, which guild and why are you leaving?',
+    '7': 'How did you hear about Sharp and Shiny, and what made you apply?',
+    '8': 'How extensive is your organized raiding experience? The more details the better',
+    '9': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
+    '10': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
+    '11': 'Do you intend to get PvP ranks? (not required)',
+    '12': 'We are on an RP-PvE server, but as a guild, we do not participate in RP. Is this in anyway an issue?',
+    '13': 'Do you have a referral or know anyone in the guild?',
+    '14': 'Calzones or strombolis?'
 };
