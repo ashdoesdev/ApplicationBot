@@ -8,6 +8,6 @@
     "\\src\\Embeds",
     "\\src\\Helpers"
   ],
-  "SelectedNode": "\\appSettings.prod.json",
+  "SelectedNode": "\\src\\application-bot.ts",
   "PreviewInSolutionExplorer": false
 }

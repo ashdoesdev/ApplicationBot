@@ -146,7 +146,7 @@ class ApplicationBot {
     approveCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
         userMessage.author.send(new community_option_accept_embed_1.CommunityOptionAcceptEmbed());
         userMessage.member.addRole(this._appSettings['community']);
-        applicationMessage.channel.send('Community member option approved. Archiving in 5 seconds.').then((archiveMessage) => {
+        applicationMessage.channel.send('Community member option accepted. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
                 confirmationMessage.delete();
                 archiveMessage.delete();
@@ -156,7 +156,7 @@ class ApplicationBot {
     }
     denyCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
         userMessage.author.send(new community_option_deny_embed_1.CommunityOptionDenyEmbed());
-        applicationMessage.channel.send('Community member option denied. Archiving in 5 seconds.').then((archiveMessage) => {
+        applicationMessage.channel.send('Community member option declined. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
                 confirmationMessage.delete();
                 archiveMessage.delete();
@@ -166,7 +166,7 @@ class ApplicationBot {
     }
     timeoutCommunityMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
         userMessage.author.send(new community_option_timeout_embed_1.CommunityOptionTimeoutEmbed());
-        applicationMessage.channel.send('Community member option denied due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
+        applicationMessage.channel.send('Community member option timed out due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
                 confirmationMessage.delete();
                 archiveMessage.delete();
@@ -186,7 +186,7 @@ class ApplicationBot {
     approveReserveMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
         userMessage.author.send(new reserve_option_accept_embed_1.ReserveOptionAcceptEmbed(this._appSettings['charter'], this._appSettings['schedule'], this._appSettings['raidiquette']));
         userMessage.member.addRole(this._appSettings['reserve']);
-        applicationMessage.channel.send('Reserve member option approved. Archiving in 5 seconds.').then((archiveMessage) => {
+        applicationMessage.channel.send('Reserve member option accepted. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
                 confirmationMessage.delete();
                 archiveMessage.delete();
@@ -196,7 +196,7 @@ class ApplicationBot {
     }
     denyReserveMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
         userMessage.author.send(new reserve_option_deny_embed_1.ReserveOptionDenyEmbed());
-        applicationMessage.channel.send('Reserve member option denied. Archiving in 5 seconds.').then((archiveMessage) => {
+        applicationMessage.channel.send('Reserve member option declined. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
                 confirmationMessage.delete();
                 archiveMessage.delete();
@@ -206,7 +206,7 @@ class ApplicationBot {
     }
     timeoutReserveMember(applicationMessage, voteMessage, userMessage, activeApplication, confirmationMessage) {
         userMessage.author.send(new reserve_option_timeout_embed_1.ReserveOptionTimeoutEmbed());
-        applicationMessage.channel.send('Reserve member option denied due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
+        applicationMessage.channel.send('Reserve member option timed out due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
             timers_1.setTimeout(() => {
                 confirmationMessage.delete();
                 archiveMessage.delete();
@@ -360,20 +360,21 @@ class ApplicationBot {
     }
 }
 exports.ApplicationBot = ApplicationBot;
-exports.lastQuestion = 15;
+exports.lastQuestion = 16;
 exports.questions = {
     '1': 'What\'s your in-game name?',
     '2': 'Class?',
     '3': 'Race?',
-    '4': 'Professions?',
-    '5': 'What spec will you be playing? Link from a talent calculator (https://classic.wowhead.com/talent-calc)',
-    '6': 'Are you coming from another guild? If so, which guild and why are you leaving?',
-    '7': 'How did you hear about Sharp and Shiny, and what made you apply?',
-    '8': 'How extensive is your organized raiding experience? The more details the better',
-    '9': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
-    '10': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
-    '11': 'Do you intend to get PvP ranks? (not required)',
-    '12': 'We are on an RP-PvE server, but as a guild, we do not participate in RP. Is this in anyway an issue?',
-    '13': 'Do you have a referral or know anyone in the guild?',
-    '14': 'Calzones or strombolis?'
+    '4': 'Level?',
+    '5': 'Professions?',
+    '6': 'What spec will you be playing? Link from a talent calculator (https://classic.wowhead.com/talent-calc)',
+    '7': 'Are you coming from another guild? If so, which guild and why are you leaving?',
+    '8': 'How did you hear about Sharp and Shiny, and what made you apply?',
+    '9': 'How extensive is your organized raiding experience? The more details the better',
+    '10': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
+    '11': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
+    '12': 'Do you intend to get PvP ranks? (not required)',
+    '13': 'We are on an RP-PvE server, but as a guild, we do not participate in RP. Is this in anyway an issue?',
+    '14': 'Do you have a referral or know anyone in the guild?',
+    '15': 'Calzones or strombolis?'
 };
