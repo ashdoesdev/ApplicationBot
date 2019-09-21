@@ -473,7 +473,7 @@ export const questions = {
     '10': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
     '11': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
     '12': 'Do you intend to get PvP ranks? (not required)',
-    '13': 'We are on an RP-PvE server, but as a guild, we do not participate in RP. Is this in anyway an issue?',
+    '13': 'We are on an RP-PvE server, but as a guild, we do not participate in RP. Is this in any way an issue?',
     '14': 'Do you have a referral or know anyone in the guild?',
     '15': 'Calzones or strombolis?'
 }
