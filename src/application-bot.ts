@@ -1,4 +1,4 @@
-﻿import { Client, GuildMember, Message, TextChannel, RichEmbed, MessageCollector, User } from 'discord.js';
+﻿import { Client, GuildMember, Message, TextChannel, RichEmbed, MessageCollector, User, Collection } from 'discord.js';
 import { AbortCharterEmbed } from './Embeds/abort-charter.embed';
 import { AbortEmbed } from './Embeds/abort.embed';
 import { ApplicationStartEmbed } from './Embeds/application-start.embed';
@@ -26,12 +26,14 @@ import { ReserveOptionAcceptEmbed } from './Embeds/reserve-option-accept.embed';
 import { ReserveOptionDenyEmbed } from './Embeds/reserve-option-deny.embed';
 import { ReserveOptionTimeoutEmbed } from './Embeds/reserve-option-timeout.embed';
 import { ReserveOptionEmbed } from './Embeds/reserve-option.embed';
+import { ApplicationLogEmbed } from './Embeds/application-log.embed';
 
 export class ApplicationBot {
     private _client = new Client();
 
     private _applyChannel: TextChannel;
     private _applicationsNewChannel: TextChannel;
+    private _applicationsLogChannel: TextChannel;
     private _applicationsArchivedChannel: TextChannel;
     private _activeApplications: Map<string, ApplicationState>;
 
@@ -50,6 +52,7 @@ export class ApplicationBot {
 
             this._applyChannel = this._client.channels.get(this._appSettings['apply']) as TextChannel;
             this._applicationsNewChannel = this._client.channels.get(this._appSettings['applications-new']) as TextChannel;
+            this._applicationsLogChannel = this._client.channels.get(this._appSettings['applications-log']) as TextChannel;
             this._applicationsArchivedChannel = this._client.channels.get(this._appSettings['applications-archived']) as TextChannel;
         });
 
@@ -76,8 +79,13 @@ export class ApplicationBot {
                                 this.proceedToApplicationStart.bind(this, message, activeApplication),
                                 this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply'])));
                         });
+
+                        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Initiated', 'Sent initial message covering the charter and schedule. Awaiting reply.'));
+
                     } else {
                         this.sendEmbed(message, new AlreadyAppliedEmbed(this._leadership));
+
+                        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'User May Need Help', 'User sent another /apply when they already had an active application.'));
                     }
                 }
             }
@@ -113,19 +121,29 @@ export class ApplicationBot {
     private proceedToApplicationStart(message: Message, activeApplication: ApplicationState) {
         message.author.send(new ApplicationStartEmbed()).then((sentMessage) => {
             this.awaitConfirmation(
-                sentMessage as Message, 
+                sentMessage as Message,
                 message,
                 this.proceedToQuestion.bind(this, 1, message, activeApplication),
                 this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply']))
             )
-        })
+        });
+
+        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Charter and Schedule Approved', 'Sent "About the Application Process" message and awaiting reply to begin.'));
     }
 
     private sendEmbed(message: Message, embed: RichEmbed) {
         message.author.send(embed);
     }
 
-    private proceedToQuestion(questionNumber: number, message: Message, activeApplication: ApplicationState) {
+    private async proceedToQuestion(questionNumber: number, message: Message, activeApplication: ApplicationState) {
+        if (questionNumber === 1) {
+            this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Begun', 'Sent first question and awaiting reply.'));
+
+        } else if (questionNumber !== lastQuestion) {
+            await this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, `Received Reply to Question ${questionNumber - 1}`, questions[questionNumber - 1]));
+            this._applicationsLogChannel.send(activeApplication.replies[questionNumber - 2].content);
+        }
+
         if (questionNumber !== lastQuestion) {
             message.author.send(new QuestionEmbed(questions[questionNumber], questionNumber)).then((sentMessage) => {
                 questionNumber++;
@@ -137,7 +155,8 @@ export class ApplicationBot {
                     this.proceedToQuestion.bind(this, questionNumber, message, activeApplication),
                     this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply']))
                 )
-            })
+            });
+
         } else {
             message.author.send(new LastQuestionEmbed()).then((sentMessage) => {
                 this.awaitConfirmation(
@@ -145,6 +164,7 @@ export class ApplicationBot {
                     message,
                     this.finalizeApplication.bind(this, message, activeApplication),
                     this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply'])));
+
             });
         }
     }
@@ -164,6 +184,8 @@ export class ApplicationBot {
         });
 
         this.backUpValues(activeApplication);
+
+        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Complete', 'Application has been completed and backed up.'));
     } 
 
     private approveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
@@ -332,10 +354,13 @@ export class ApplicationBot {
             proceed();
         }).catch((error) => {
             if (error) {
-                timeout();
-                this._activeApplications.delete(message.author.id);
-                console.log("error in awaitConfirmation:", error);
+                if (error instanceof Collection) {
+                    timeout();
+                    this._activeApplications.delete(message.author.id);
+                }
             }
+
+            console.log("error in awaitConfirmation:", error);
         });
     }
 
@@ -400,9 +425,15 @@ export class ApplicationBot {
         sentMessage.channel.awaitMessages(filter, { maxMatches: 1, time: 1800000, errors: ['time'] }).then((collected) => {
             activeApplication.replies.push(Array.from(collected.entries())[0][1]);
             proceed();
-        }).catch(() => {
-            timeout();
-            this._activeApplications.delete(message.author.id);
+        }).catch((error) => {
+            if (error) {
+                if (error instanceof Collection) {
+                    timeout();
+                    this._activeApplications.delete(message.author.id);
+                }
+            }
+
+            console.log("error in awaitResponse:", error);
         });
     }
 
@@ -449,9 +480,9 @@ export const questions = {
     '7': 'Are you coming from another guild? If so, which guild and why are you leaving?',
     '8': 'How did you hear about Sharp and Shiny, and what made you apply?',
     '9': 'How extensive is your organized raiding experience? The more details the better',
-    '10': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
-    '11': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
-    '12': 'Do you intend to get PvP ranks? (not required)',
+    '10': 'Do you have parses on warcraftlogs? If so, please provide a link.',
+    '11': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
+    '12': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
     '13': 'We are on an RP-PvE server, but as a guild, we do not participate in RP. Is this in any way an issue?',
     '14': 'Do you have a referral or know anyone in the guild?',
     '15': 'Calzones or strombolis?'

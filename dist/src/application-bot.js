@@ -34,6 +34,7 @@ const reserve_option_accept_embed_1 = require("./Embeds/reserve-option-accept.em
 const reserve_option_deny_embed_1 = require("./Embeds/reserve-option-deny.embed");
 const reserve_option_timeout_embed_1 = require("./Embeds/reserve-option-timeout.embed");
 const reserve_option_embed_1 = require("./Embeds/reserve-option.embed");
+const application_log_embed_1 = require("./Embeds/application-log.embed");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();
@@ -46,6 +47,7 @@ class ApplicationBot {
             console.log('Ready!');
             this._applyChannel = this._client.channels.get(this._appSettings['apply']);
             this._applicationsNewChannel = this._client.channels.get(this._appSettings['applications-new']);
+            this._applicationsLogChannel = this._client.channels.get(this._appSettings['applications-log']);
             this._applicationsArchivedChannel = this._client.channels.get(this._appSettings['applications-archived']);
         });
         this._client.on('message', message => {
@@ -62,9 +64,11 @@ class ApplicationBot {
                             message.react('✅');
                             this.awaitConfirmation(sentMessage, message, this.proceedToApplicationStart.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership, this._appSettings['apply'])));
                         });
+                        this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Application Initiated', 'Sent initial message covering the charter and schedule. Awaiting reply.'));
                     }
                     else {
                         this.sendEmbed(message, new already_applied_embed_1.AlreadyAppliedEmbed(this._leadership));
+                        this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'User May Need Help', 'User sent another /apply when they already had an active application.'));
                     }
                 }
             }
@@ -96,22 +100,32 @@ class ApplicationBot {
         message.author.send(new application_start_embed_1.ApplicationStartEmbed()).then((sentMessage) => {
             this.awaitConfirmation(sentMessage, message, this.proceedToQuestion.bind(this, 1, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership, this._appSettings['apply'])));
         });
+        this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Charter and Schedule Approved', 'Sent "About the Application Process" message and awaiting reply to begin.'));
     }
     sendEmbed(message, embed) {
         message.author.send(embed);
     }
     proceedToQuestion(questionNumber, message, activeApplication) {
-        if (questionNumber !== exports.lastQuestion) {
-            message.author.send(new question_embed_1.QuestionEmbed(exports.questions[questionNumber], questionNumber)).then((sentMessage) => {
-                questionNumber++;
-                this.awaitResponse(sentMessage, message, activeApplication, this.proceedToQuestion.bind(this, questionNumber, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership, this._appSettings['apply'])));
-            });
-        }
-        else {
-            message.author.send(new last_question_embed_1.LastQuestionEmbed()).then((sentMessage) => {
-                this.awaitConfirmation(sentMessage, message, this.finalizeApplication.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership, this._appSettings['apply'])));
-            });
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            if (questionNumber === 1) {
+                this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Application Begun', 'Sent first question and awaiting reply.'));
+            }
+            else if (questionNumber !== exports.lastQuestion) {
+                yield this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, `Received Reply to Question ${questionNumber - 1}`, exports.questions[questionNumber - 1]));
+                this._applicationsLogChannel.send(activeApplication.replies[questionNumber - 2].content);
+            }
+            if (questionNumber !== exports.lastQuestion) {
+                message.author.send(new question_embed_1.QuestionEmbed(exports.questions[questionNumber], questionNumber)).then((sentMessage) => {
+                    questionNumber++;
+                    this.awaitResponse(sentMessage, message, activeApplication, this.proceedToQuestion.bind(this, questionNumber, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership, this._appSettings['apply'])));
+                });
+            }
+            else {
+                message.author.send(new last_question_embed_1.LastQuestionEmbed()).then((sentMessage) => {
+                    this.awaitConfirmation(sentMessage, message, this.finalizeApplication.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership, this._appSettings['apply'])));
+                });
+            }
+        });
     }
     finalizeApplication(message, activeApplication) {
         message.author.send(new thanks_for_applying_embed_1.ThanksForApplyingEmbed(this._leadership));
@@ -121,6 +135,7 @@ class ApplicationBot {
             });
         });
         this.backUpValues(activeApplication);
+        this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Application Complete', 'Application has been completed and backed up.'));
     }
     approveApplication(applicationMessage, voteMessage, userMessage, activeApplication) {
         userMessage.author.send(new application_accepted_embed_1.ApplicationAcceptedEmbed(this._appSettings['charter'], this._appSettings['schedule'], this._appSettings['raidiquette']));
@@ -256,10 +271,12 @@ class ApplicationBot {
             proceed();
         }).catch((error) => {
             if (error) {
-                timeout();
-                this._activeApplications.delete(message.author.id);
-                console.log("error in awaitConfirmation:", error);
+                if (error instanceof discord_js_1.Collection) {
+                    timeout();
+                    this._activeApplications.delete(message.author.id);
+                }
             }
+            console.log("error in awaitConfirmation:", error);
         });
     }
     awaitMajorityApproval(sentMessage, approve, deny, community, reserve) {
@@ -311,9 +328,14 @@ class ApplicationBot {
         sentMessage.channel.awaitMessages(filter, { maxMatches: 1, time: 1800000, errors: ['time'] }).then((collected) => {
             activeApplication.replies.push(Array.from(collected.entries())[0][1]);
             proceed();
-        }).catch(() => {
-            timeout();
-            this._activeApplications.delete(message.author.id);
+        }).catch((error) => {
+            if (error) {
+                if (error instanceof discord_js_1.Collection) {
+                    timeout();
+                    this._activeApplications.delete(message.author.id);
+                }
+            }
+            console.log("error in awaitResponse:", error);
         });
     }
     canUseCommands(message) {
@@ -352,9 +374,9 @@ exports.questions = {
     '7': 'Are you coming from another guild? If so, which guild and why are you leaving?',
     '8': 'How did you hear about Sharp and Shiny, and what made you apply?',
     '9': 'How extensive is your organized raiding experience? The more details the better',
-    '10': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
-    '11': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
-    '12': 'Do you intend to get PvP ranks? (not required)',
+    '10': 'Do you have parses on warcraftlogs? If so, please provide a link.',
+    '11': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
+    '12': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
     '13': 'We are on an RP-PvE server, but as a guild, we do not participate in RP. Is this in any way an issue?',
     '14': 'Do you have a referral or know anyone in the guild?',
     '15': 'Calzones or strombolis?'
