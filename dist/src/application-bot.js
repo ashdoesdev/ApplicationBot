@@ -9,8 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const abort_charter_embed_1 = require("./Embeds/abort-charter.embed");
-const abort_embed_1 = require("./Embeds/abort.embed");
 const application_start_embed_1 = require("./Embeds/application-start.embed");
 const intro_embed_1 = require("./Embeds/intro.embed");
 const timeout_embed_1 = require("./Embeds/timeout.embed");
@@ -62,7 +60,7 @@ class ApplicationBot {
                         let activeApplication = this._activeApplications.get(message.author.id);
                         message.author.send(new intro_embed_1.IntroEmbed(this._appSettings['charter'], this._appSettings['schedule'])).then((sentMessage) => {
                             message.react('✅');
-                            this.awaitApproval(sentMessage, message, this.proceedToApplicationStart.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new abort_charter_embed_1.AbortCharterEmbed(this._leadership, this._appSettings['apply'])), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership, this._appSettings['apply'])));
+                            this.awaitConfirmation(sentMessage, message, this.proceedToApplicationStart.bind(this, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership, this._appSettings['apply'])));
                         });
                     }
                     else {
@@ -96,7 +94,7 @@ class ApplicationBot {
     }
     proceedToApplicationStart(message, activeApplication) {
         message.author.send(new application_start_embed_1.ApplicationStartEmbed()).then((sentMessage) => {
-            this.awaitApproval(sentMessage, message, this.proceedToQuestion.bind(this, 1, message, activeApplication), this.sendEmbed.bind(this, message, new abort_embed_1.AbortEmbed(this._leadership, this._appSettings['apply'])), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership, this._appSettings['apply'])));
+            this.awaitConfirmation(sentMessage, message, this.proceedToQuestion.bind(this, 1, message, activeApplication), this.sendEmbed.bind(this, message, new timeout_embed_1.TimeoutEmbed(this._leadership, this._appSettings['apply'])));
         });
     }
     sendEmbed(message, embed) {
@@ -229,26 +227,6 @@ class ApplicationBot {
         voteMessage.delete();
         this._activeApplications.delete(userMessage.author.id);
     }
-    awaitApproval(sentMessage, message, proceed, abort, timeout, preserveApplicationState) {
-        sentMessage.react('✅').then(() => sentMessage.react('❌'));
-        const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author.id;
-        };
-        sentMessage.awaitReactions(filter, { max: 1, time: 1800000, errors: ['time'] }).then((collected) => {
-            if (collected.first().emoji.name === '✅') {
-                proceed();
-            }
-            else {
-                abort();
-                this._activeApplications.delete(message.author.id);
-            }
-        }).catch(() => {
-            timeout();
-            if (!preserveApplicationState) {
-                this._activeApplications.delete(message.author.id);
-            }
-        });
-    }
     awaitRoleApproval(sentMessage, message, proceed, abort, timeout, preserveApplicationState) {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
         const filter = (reaction, user) => {
@@ -276,9 +254,12 @@ class ApplicationBot {
         };
         sentMessage.awaitReactions(filter, { max: 1, time: 1800000, errors: ['time'] }).then((collected) => {
             proceed();
-        }).catch(() => {
-            timeout();
-            this._activeApplications.delete(message.author.id);
+        }).catch((error) => {
+            if (error) {
+                timeout();
+                this._activeApplications.delete(message.author.id);
+                console.log("error in awaitConfirmation:", error);
+            }
         });
     }
     awaitMajorityApproval(sentMessage, approve, deny, community, reserve) {

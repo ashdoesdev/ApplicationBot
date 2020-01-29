@@ -70,11 +70,10 @@ export class ApplicationBot {
                         message.author.send(new IntroEmbed(this._appSettings['charter'], this._appSettings['schedule'])).then((sentMessage) => {
                             message.react('✅');
 
-                            this.awaitApproval(
+                            this.awaitConfirmation(
                                 sentMessage as Message,
                                 message,
                                 this.proceedToApplicationStart.bind(this, message, activeApplication),
-                                this.sendEmbed.bind(this, message, new AbortCharterEmbed(this._leadership, this._appSettings['apply'])),
                                 this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply'])));
                         });
                     } else {
@@ -113,11 +112,10 @@ export class ApplicationBot {
 
     private proceedToApplicationStart(message: Message, activeApplication: ApplicationState) {
         message.author.send(new ApplicationStartEmbed()).then((sentMessage) => {
-            this.awaitApproval(
+            this.awaitConfirmation(
                 sentMessage as Message, 
                 message,
                 this.proceedToQuestion.bind(this, 1, message, activeApplication),
-                this.sendEmbed.bind(this, message, new AbortEmbed(this._leadership, this._appSettings['apply'])),
                 this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply']))
             )
         })
@@ -301,28 +299,6 @@ export class ApplicationBot {
         this._activeApplications.delete(userMessage.author.id);
     }
 
-    private awaitApproval(sentMessage: Message, message: Message, proceed, abort, timeout, preserveApplicationState?: boolean): void {
-        sentMessage.react('✅').then(() => sentMessage.react('❌'));
-
-        const filter = (reaction, user) => {
-            return (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author.id;
-        };
-
-        sentMessage.awaitReactions(filter, { max: 1, time: 1800000, errors: ['time'] }).then((collected) => {
-            if (collected.first().emoji.name === '✅') {
-                proceed();
-            } else {
-                abort();
-                this._activeApplications.delete(message.author.id);
-            }
-        }).catch(() => {
-            timeout();
-            if (!preserveApplicationState) {
-                this._activeApplications.delete(message.author.id);
-            }
-        });
-    }
-
     private awaitRoleApproval(sentMessage: Message, message: Message, proceed, abort, timeout, preserveApplicationState?: boolean): void {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
 
@@ -354,9 +330,12 @@ export class ApplicationBot {
 
         sentMessage.awaitReactions(filter, { max: 1, time: 1800000, errors: ['time'] }).then((collected) => {
             proceed();
-        }).catch(() => {
-            timeout();
-            this._activeApplications.delete(message.author.id);
+        }).catch((error) => {
+            if (error) {
+                timeout();
+                this._activeApplications.delete(message.author.id);
+                console.log("error in awaitConfirmation:", error);
+            }
         });
     }
 
