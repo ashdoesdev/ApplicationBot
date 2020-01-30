@@ -139,7 +139,7 @@ export class ApplicationBot {
         if (questionNumber === 1) {
             this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Begun', 'Sent first question and awaiting reply.'));
 
-        } else if (questionNumber !== lastQuestion) {
+        } else {
             await this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, `Received Reply to Question ${questionNumber - 1}`, questions[questionNumber - 1]));
             this._applicationsLogChannel.send(activeApplication.replies[questionNumber - 2].content);
         }
@@ -164,7 +164,6 @@ export class ApplicationBot {
                     message,
                     this.finalizeApplication.bind(this, message, activeApplication),
                     this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply'])));
-
             });
         }
     }

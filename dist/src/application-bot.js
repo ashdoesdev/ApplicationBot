@@ -110,7 +110,7 @@ class ApplicationBot {
             if (questionNumber === 1) {
                 this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Application Begun', 'Sent first question and awaiting reply.'));
             }
-            else if (questionNumber !== exports.lastQuestion) {
+            else {
                 yield this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, `Received Reply to Question ${questionNumber - 1}`, exports.questions[questionNumber - 1]));
                 this._applicationsLogChannel.send(activeApplication.replies[questionNumber - 2].content);
             }

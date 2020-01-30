@@ -3,7 +3,8 @@
     "",
     "\\dist",
     "\\dist\\src",
-    "\\src"
+    "\\src",
+    "\\src\\Embeds"
   ],
   "SelectedNode": "\\src\\index.ts",
   "PreviewInSolutionExplorer": false
