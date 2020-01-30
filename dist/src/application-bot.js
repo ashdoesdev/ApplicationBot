@@ -104,6 +104,9 @@ class ApplicationBot {
     }
     sendEmbed(message, embed) {
         message.author.send(embed);
+        if (embed instanceof timeout_embed_1.TimeoutEmbed) {
+            this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Application Timed Out', 'User let their application time out (30 minutes of inactivity). If you suspect this is a bug, let me know and I will check logs.'));
+        }
     }
     proceedToQuestion(questionNumber, message, activeApplication) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -112,7 +115,7 @@ class ApplicationBot {
             }
             else {
                 yield this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, `Received Reply to Question ${questionNumber - 1}`, exports.questions[questionNumber - 1]));
-                this._applicationsLogChannel.send(activeApplication.replies[questionNumber - 2].content);
+                this._applicationsLogChannel.send(`*Message received from ${message.author.username}*\n${activeApplication.replies[questionNumber - 2].content}`);
             }
             if (questionNumber !== exports.lastQuestion) {
                 message.author.send(new question_embed_1.QuestionEmbed(exports.questions[questionNumber], questionNumber)).then((sentMessage) => {

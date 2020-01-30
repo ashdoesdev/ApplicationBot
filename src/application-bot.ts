@@ -133,6 +133,10 @@ export class ApplicationBot {
 
     private sendEmbed(message: Message, embed: RichEmbed) {
         message.author.send(embed);
+
+        if (embed instanceof TimeoutEmbed) {
+            this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Timed Out', 'User let their application time out (30 minutes of inactivity). If you suspect this is a bug, let me know and I will check logs.'));
+        }
     }
 
     private async proceedToQuestion(questionNumber: number, message: Message, activeApplication: ApplicationState) {
@@ -141,7 +145,7 @@ export class ApplicationBot {
 
         } else {
             await this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, `Received Reply to Question ${questionNumber - 1}`, questions[questionNumber - 1]));
-            this._applicationsLogChannel.send(activeApplication.replies[questionNumber - 2].content);
+            this._applicationsLogChannel.send(`*Message received from ${message.author.username}*\n${activeApplication.replies[questionNumber - 2].content}`);
         }
 
         if (questionNumber !== lastQuestion) {

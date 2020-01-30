@@ -8,7 +8,8 @@ class BackupApplicationEmbed extends discord_js_1.RichEmbed {
         this.setTitle(`Backup of application for **${member.displayName}**`);
         this.setTimestamp();
         for (let i = 0; i < questions.length; i++) {
-            this.addField(questions[i][0], questions[i][1]);
+            let safeContent = questions[i].slice(0, 1024);
+            this.addField(questions[i][0], safeContent);
         }
     }
 }

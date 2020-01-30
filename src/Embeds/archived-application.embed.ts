@@ -35,7 +35,9 @@ export class ArchivedApplicationEmbed extends RichEmbed {
         this.setTimestamp();
 
         for (let i = 0; i < activeApplication.replies.length; i++) {
-            this.addField(questions[i + 1], activeApplication.replies[i]);
+            let safeContent = activeApplication.replies[i].content.slice(0, 1024);
+
+            this.addField(questions[i + 1], safeContent);
         }
     }
 }
