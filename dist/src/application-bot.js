@@ -131,14 +131,24 @@ class ApplicationBot {
         });
     }
     finalizeApplication(message, activeApplication) {
-        message.author.send(new thanks_for_applying_embed_1.ThanksForApplyingEmbed(this._leadership));
-        this._applicationsNewChannel.send(new application_embed_1.ApplicationEmbed(message, exports.questions, activeApplication)).then((applicationMessage) => {
-            applicationMessage.channel.send(new vote_embed_1.VoteEmbed(message)).then((voteMessage) => {
-                this.awaitMajorityApproval(voteMessage, this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendReserveMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication));
+        return __awaiter(this, void 0, void 0, function* () {
+            this._applicationsNewChannel.send(new application_embed_1.ApplicationEmbed(message, exports.questions, activeApplication)).then((applicationMessage) => {
+                applicationMessage.channel.send(new vote_embed_1.VoteEmbed(message)).then((voteMessage) => {
+                    this.awaitMajorityApproval(voteMessage, this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendReserveMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication));
+                });
             });
+            activeApplication.openAppChannel = (yield message.guild.createChannel(`application-${message.author.username}`, 'text'));
+            let everyone = this._client.guilds.get(this._appSettings['server']).roles.find('name', '@everyone');
+            activeApplication.openAppChannel.overwritePermissions(this._appSettings['bot'], { VIEW_CHANNEL: true, MENTION_EVERYONE: true });
+            activeApplication.openAppChannel.overwritePermissions(this._appSettings['leadership'], { VIEW_CHANNEL: true });
+            activeApplication.openAppChannel.overwritePermissions(message.author.id, { VIEW_CHANNEL: true });
+            activeApplication.openAppChannel.overwritePermissions(this._appSettings['everyone'], { VIEW_CHANNEL: false });
+            message.author.send(new thanks_for_applying_embed_1.ThanksForApplyingEmbed(this._leadership, activeApplication.openAppChannel.id));
+            activeApplication.openAppChannel.send('*This is a temporary channel created to discuss your application. It will stay open until your application process is complete.*');
+            activeApplication.openAppChannel.send(`<@${message.author.id}> <@&${this._appSettings['leadership']}>`);
+            this.backUpValues(activeApplication);
+            this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Application Complete', 'Application has been completed and backed up.'));
         });
-        this.backUpValues(activeApplication);
-        this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Application Complete', 'Application has been completed and backed up.'));
     }
     approveApplication(applicationMessage, voteMessage, userMessage, activeApplication) {
         userMessage.author.send(new application_accepted_embed_1.ApplicationAcceptedEmbed(this._appSettings['charter'], this._appSettings['schedule'], this._appSettings['raidiquette']));

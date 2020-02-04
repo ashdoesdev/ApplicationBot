@@ -10,6 +10,6 @@ export class AlreadyAppliedEmbed extends RichEmbed {
 
         this.setColor('#60b5bc');
         this.addField('Oops!', 'You already have an active application.');
-        this.addField('If you have any questions, feel free to reach out to any member of our leadership', this._leadershipList.getMentions());
+        this.addField('If you have any questions, feel free to reach out to any member of our leadership.', this._leadershipList.getMentions());
     }
 }

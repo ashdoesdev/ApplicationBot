@@ -10,6 +10,6 @@ export class TimeoutEmbed extends RichEmbed {
 
         this.setColor('#60b5bc');
         this.setDescription(`Application process aborted due to inactivity. Feel free to send another /apply in the <#${applyChannel}> channel when you are ready to start again.`)
-        this.addField('Questions? Reach out to any member of our leadership', this._leadershipList.getMentions());
+        this.addField('Questions? Reach out to any member of our leadership.', this._leadershipList.getMentions());
     }
 }

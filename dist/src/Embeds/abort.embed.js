@@ -8,7 +8,7 @@ class AbortEmbed extends discord_js_1.RichEmbed {
         this._leadershipList = new leadership_list_helper_1.LeadershipListHelper(leadership);
         this.setColor('#60b5bc');
         this.setDescription(`Application process aborted. Feel free to send another /apply in the <#${applyChannel}> channel when you are ready to begin.`);
-        this.addField('Questions? Reach out to any member of our leadership', this._leadershipList.getMentions());
+        this.addField('Questions? Reach out to any member of our leadership.', this._leadershipList.getMentions());
     }
 }
 exports.AbortEmbed = AbortEmbed;

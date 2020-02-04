@@ -1,4 +1,4 @@
-﻿import { Client, GuildMember, Message, TextChannel, RichEmbed, MessageCollector, User, Collection } from 'discord.js';
+﻿import { Client, GuildMember, Message, TextChannel, RichEmbed, MessageCollector, User, Collection, PermissionOverwrites } from 'discord.js';
 import { AbortCharterEmbed } from './Embeds/abort-charter.embed';
 import { AbortEmbed } from './Embeds/abort.embed';
 import { ApplicationStartEmbed } from './Embeds/application-start.embed';
@@ -172,9 +172,7 @@ export class ApplicationBot {
         }
     }
 
-    private finalizeApplication(message: Message, activeApplication: ApplicationState): void {
-        message.author.send(new ThanksForApplyingEmbed(this._leadership));
-
+    private async finalizeApplication(message: Message, activeApplication: ApplicationState): Promise<void> {
         this._applicationsNewChannel.send(new ApplicationEmbed(message, questions, activeApplication)).then((applicationMessage) => {
             (applicationMessage as Message).channel.send(new VoteEmbed(message)).then((voteMessage) => {
                 this.awaitMajorityApproval(
@@ -185,6 +183,20 @@ export class ApplicationBot {
                     this.sendReserveMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication))
             });
         });
+
+        activeApplication.openAppChannel = await message.guild.createChannel(`application-${message.author.username}`, 'text') as TextChannel;
+
+        let everyone = this._client.guilds.get(this._appSettings['server']).roles.find('name', '@everyone');
+
+        activeApplication.openAppChannel.overwritePermissions(this._appSettings['bot'], { VIEW_CHANNEL: true, MENTION_EVERYONE: true });
+        activeApplication.openAppChannel.overwritePermissions(this._appSettings['leadership'], { VIEW_CHANNEL: true });
+        activeApplication.openAppChannel.overwritePermissions(message.author.id, { VIEW_CHANNEL: true });
+        activeApplication.openAppChannel.overwritePermissions(this._appSettings['everyone'], { VIEW_CHANNEL: false });
+
+        message.author.send(new ThanksForApplyingEmbed(this._leadership, activeApplication.openAppChannel.id));
+
+        activeApplication.openAppChannel.send('*This is a temporary channel created to discuss your application. It will stay open until your application process is complete.*');
+        activeApplication.openAppChannel.send(`<@${message.author.id}> <@&${this._appSettings['leadership']}>`);
 
         this.backUpValues(activeApplication);
 
