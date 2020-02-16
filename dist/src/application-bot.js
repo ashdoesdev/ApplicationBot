@@ -49,10 +49,19 @@ class ApplicationBot {
             this._applicationsNewChannel = this._client.channels.get(this._appSettings['applications-new']);
             this._applicationsLogChannel = this._client.channels.get(this._appSettings['applications-log']);
             this._applicationsArchivedChannel = this._client.channels.get(this._appSettings['applications-archived']);
+            this._applicationChatsArchiveChannel = this._client.channels.get(this._appSettings['application-chats-archived']);
         });
-        this._client.on('message', message => {
+        this._client.on('message', (message) => __awaiter(this, void 0, void 0, function* () {
+            if (message.content === '/archiveapp' && message.author.id === this._appSettings['admin'] && message.channel.name.startsWith('application-')) {
+                let messages = yield this._messages.getMessages(message.channel);
+                messages.reverse();
+                for (let message of messages) {
+                    yield this._applicationChatsArchiveChannel.send(`*Message from ${message.author.username}*\n${message.content}`);
+                    yield message.delete();
+                }
+            }
             if (message.content === '/apply') {
-                if (message.channel.id === this._applyChannel.id) {
+                if (message.channel.id === this._applyChannel.id || (message.channel.id === this._applicationsLogChannel.id && message.author.id === this._appSettings['admin'])) {
                     this._leadership = this._client.guilds.get(this._appSettings['server']).members.array().filter((member) => member.roles.filter((role) => role.id === this._appSettings['leadership']).array().length > 0);
                     if (!this._activeApplications) {
                         this._activeApplications = new Map();
@@ -94,7 +103,7 @@ class ApplicationBot {
                     message.channel.send('Member not found.');
                 }
             }
-        });
+        }));
     }
     proceedToApplicationStart(message, activeApplication) {
         message.author.send(new application_start_embed_1.ApplicationStartEmbed()).then((sentMessage) => {
@@ -132,22 +141,21 @@ class ApplicationBot {
     }
     finalizeApplication(message, activeApplication) {
         return __awaiter(this, void 0, void 0, function* () {
-            this._applicationsNewChannel.send(new application_embed_1.ApplicationEmbed(message, exports.questions, activeApplication)).then((applicationMessage) => {
+            this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Application Submitted', 'User submitted their application.'));
+            yield this._applicationsNewChannel.send(new application_embed_1.ApplicationEmbed(message, exports.questions, activeApplication)).then((applicationMessage) => {
                 applicationMessage.channel.send(new vote_embed_1.VoteEmbed(message)).then((voteMessage) => {
                     this.awaitMajorityApproval(voteMessage, this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendReserveMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication));
                 });
             });
             activeApplication.openAppChannel = (yield message.guild.createChannel(`application-${message.author.username}`, 'text'));
-            let everyone = this._client.guilds.get(this._appSettings['server']).roles.find('name', '@everyone');
             activeApplication.openAppChannel.overwritePermissions(this._appSettings['bot'], { VIEW_CHANNEL: true, MENTION_EVERYONE: true });
             activeApplication.openAppChannel.overwritePermissions(this._appSettings['leadership'], { VIEW_CHANNEL: true });
             activeApplication.openAppChannel.overwritePermissions(message.author.id, { VIEW_CHANNEL: true });
             activeApplication.openAppChannel.overwritePermissions(this._appSettings['everyone'], { VIEW_CHANNEL: false });
             message.author.send(new thanks_for_applying_embed_1.ThanksForApplyingEmbed(this._leadership, activeApplication.openAppChannel.id));
-            activeApplication.openAppChannel.send('*This is a temporary channel created to discuss your application. It will stay open until your application process is complete.*');
-            activeApplication.openAppChannel.send(`<@${message.author.id}> <@&${this._appSettings['leadership']}>`);
+            activeApplication.openAppChannel.send(`<@${message.author.id}> *This is a temporary channel created to discuss your application. It will stay open until your application process is complete. Feel free to ping <@&${this._appSettings['leadership']}> for any questions.*`);
             this.backUpValues(activeApplication);
-            this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Application Complete', 'Application has been completed and backed up.'));
+            this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Backup Complete', 'Post-application steps complete and application backed up.'));
         });
     }
     approveApplication(applicationMessage, voteMessage, userMessage, activeApplication) {

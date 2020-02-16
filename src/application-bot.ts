@@ -35,6 +35,7 @@ export class ApplicationBot {
     private _applicationsNewChannel: TextChannel;
     private _applicationsLogChannel: TextChannel;
     private _applicationsArchivedChannel: TextChannel;
+    private _applicationChatsArchiveChannel: TextChannel;
     private _activeApplications: Map<string, ApplicationState>;
 
     private _leadership: GuildMember[];
@@ -54,11 +55,23 @@ export class ApplicationBot {
             this._applicationsNewChannel = this._client.channels.get(this._appSettings['applications-new']) as TextChannel;
             this._applicationsLogChannel = this._client.channels.get(this._appSettings['applications-log']) as TextChannel;
             this._applicationsArchivedChannel = this._client.channels.get(this._appSettings['applications-archived']) as TextChannel;
+            this._applicationChatsArchiveChannel = this._client.channels.get(this._appSettings['application-chats-archived']) as TextChannel;
         });
 
-        this._client.on('message', message => {
+        this._client.on('message', async message => {
+            if (message.content === '/archiveapp' && message.author.id === this._appSettings['admin'] && (message.channel as TextChannel).name.startsWith('application-')) {
+                let messages = await this._messages.getMessages(message.channel as TextChannel);
+
+                messages.reverse();
+
+                for (let message of messages) {
+                    await this._applicationChatsArchiveChannel.send(`*Message from ${message.author.username}*\n${message.content}`);
+                    await message.delete();
+                }
+            }
+
             if (message.content === '/apply') {
-                if (message.channel.id === this._applyChannel.id) {
+                if (message.channel.id === this._applyChannel.id || (message.channel.id === this._applicationsLogChannel.id && message.author.id === this._appSettings['admin'])) {
                     this._leadership = this._client.guilds.get(this._appSettings['server']).members.array().filter((member) => member.roles.filter((role) => role.id === this._appSettings['leadership']).array().length > 0);
 
                     if (!this._activeApplications) {
@@ -173,7 +186,9 @@ export class ApplicationBot {
     }
 
     private async finalizeApplication(message: Message, activeApplication: ApplicationState): Promise<void> {
-        this._applicationsNewChannel.send(new ApplicationEmbed(message, questions, activeApplication)).then((applicationMessage) => {
+        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Submitted', 'User submitted their application.'));
+
+        await this._applicationsNewChannel.send(new ApplicationEmbed(message, questions, activeApplication)).then((applicationMessage) => {
             (applicationMessage as Message).channel.send(new VoteEmbed(message)).then((voteMessage) => {
                 this.awaitMajorityApproval(
                     voteMessage as Message,
@@ -186,8 +201,6 @@ export class ApplicationBot {
 
         activeApplication.openAppChannel = await message.guild.createChannel(`application-${message.author.username}`, 'text') as TextChannel;
 
-        let everyone = this._client.guilds.get(this._appSettings['server']).roles.find('name', '@everyone');
-
         activeApplication.openAppChannel.overwritePermissions(this._appSettings['bot'], { VIEW_CHANNEL: true, MENTION_EVERYONE: true });
         activeApplication.openAppChannel.overwritePermissions(this._appSettings['leadership'], { VIEW_CHANNEL: true });
         activeApplication.openAppChannel.overwritePermissions(message.author.id, { VIEW_CHANNEL: true });
@@ -195,12 +208,11 @@ export class ApplicationBot {
 
         message.author.send(new ThanksForApplyingEmbed(this._leadership, activeApplication.openAppChannel.id));
 
-        activeApplication.openAppChannel.send('*This is a temporary channel created to discuss your application. It will stay open until your application process is complete.*');
-        activeApplication.openAppChannel.send(`<@${message.author.id}> <@&${this._appSettings['leadership']}>`);
+        activeApplication.openAppChannel.send(`<@${message.author.id}> *This is a temporary channel created to discuss your application. It will stay open until your application process is complete. Feel free to ping <@&${this._appSettings['leadership']}> for any questions.*`);
 
         this.backUpValues(activeApplication);
 
-        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Complete', 'Application has been completed and backed up.'));
+        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Backup Complete', 'Post-application steps complete and application backed up.'));
     } 
 
     private approveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {

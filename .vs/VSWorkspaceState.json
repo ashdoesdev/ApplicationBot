@@ -4,8 +4,9 @@
     "\\dist",
     "\\dist\\src",
     "\\src",
-    "\\src\\Embeds"
+    "\\src\\Embeds",
+    "\\src\\Helpers"
   ],
-  "SelectedNode": "\\src\\Embeds\\question.embed.ts",
+  "SelectedNode": "\\src\\index.ts",
   "PreviewInSolutionExplorer": false
 }
