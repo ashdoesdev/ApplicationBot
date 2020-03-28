@@ -3,11 +3,10 @@
     "",
     "\\dist",
     "\\dist\\src",
-    "\\dist\\src\\Embeds",
     "\\src",
     "\\src\\Embeds",
     "\\src\\Helpers"
   ],
-  "SelectedNode": "\\appSettings.prod.json",
+  "SelectedNode": "\\src\\index.ts",
   "PreviewInSolutionExplorer": false
 }

@@ -406,12 +406,17 @@ class ApplicationBot {
         let chunks = new Array();
         for (let i = 0; i < app.length; i++) {
             let safeMessage = app[i].content.match(/.{1,1024}(\s|$)/g);
-            for (let mi = 0; mi < safeMessage.length; mi++) {
-                if (mi > 0) {
-                    chunks.push(["(continued)", safeMessage[mi]]);
-                }
-                else {
-                    chunks.push([questions[i + 1], safeMessage[mi]]);
+            if (!safeMessage) {
+                chunks.push([questions[i + 1], "Error saving message."]);
+            }
+            else {
+                for (let mi = 0; mi < safeMessage.length; mi++) {
+                    if (mi > 0) {
+                        chunks.push(["(continued)", safeMessage[mi]]);
+                    }
+                    else {
+                        chunks.push([questions[i + 1], safeMessage[mi]]);
+                    }
                 }
             }
         }
