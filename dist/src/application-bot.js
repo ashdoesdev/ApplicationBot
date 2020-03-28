@@ -35,6 +35,7 @@ const reserve_option_deny_embed_1 = require("./Embeds/reserve-option-deny.embed"
 const reserve_option_timeout_embed_1 = require("./Embeds/reserve-option-timeout.embed");
 const reserve_option_embed_1 = require("./Embeds/reserve-option.embed");
 const application_log_embed_1 = require("./Embeds/application-log.embed");
+const application_questions_embed_1 = require("./Embeds/application-questions.embed");
 class ApplicationBot {
     constructor() {
         this._client = new discord_js_1.Client();
@@ -52,13 +53,21 @@ class ApplicationBot {
             this._applicationChatsArchiveChannel = this._client.channels.get(this._appSettings['application-chats-archived']);
         });
         this._client.on('message', (message) => __awaiter(this, void 0, void 0, function* () {
-            if (message.content === '/archiveapp' && message.author.id === this._appSettings['admin'] && message.channel.name.startsWith('application-')) {
+            if (message.content === '/archiveapp' && message.member.roles.has(this._appSettings['leadership']) && message.channel.name.startsWith('application-')) {
                 let messages = yield this._messages.getMessages(message.channel);
                 messages.reverse();
+                let member;
+                if (Array.from(messages[0].mentions.users)[0]) {
+                    member = Array.from(messages[0].mentions.users)[0][1];
+                }
+                if (member) {
+                    message.channel.overwritePermissions(member, { VIEW_CHANNEL: false });
+                }
                 for (let message of messages) {
                     yield this._applicationChatsArchiveChannel.send(`*Message from ${message.author.username}*\n${message.content}`);
                     yield message.delete();
                 }
+                message.channel.delete();
             }
             if (message.content === '/apply') {
                 if (message.channel.id === this._applyChannel.id || (message.channel.id === this._applicationsLogChannel.id && message.author.id === this._appSettings['admin'])) {
@@ -87,7 +96,7 @@ class ApplicationBot {
             if (message.content.startsWith('/restore') && message.channel.type === 'dm' && message.author.id === this._appSettings['admin']) {
                 let memberId = message.content.match(/"((?:\\.|[^"\\])*)"/)[0].replace(/"/g, '');
                 this._guildMembers = this._client.guilds.get(this._appSettings['server']).members.array();
-                let fullMember = this.matchMemberFromId(this._guildMembers, memberId);
+                let fullMember = this.matchMemberFromId(this._guildMembers, memberId) || memberId;
                 if (fullMember) {
                     let path = message.content.replace('/restore', '').replace(memberId, '').replace(/"/g, '').trim();
                     fs.createReadStream(path)
@@ -95,7 +104,7 @@ class ApplicationBot {
                         let backup = JSON.parse(data);
                         this._applicationsArchivedChannel.send(new backup_application_embed_1.BackupApplicationEmbed(backup, fullMember));
                     })
-                        .on('error', () => {
+                        .on('error', (error) => {
                         message.channel.send('File not found.');
                     });
                 }
@@ -142,11 +151,16 @@ class ApplicationBot {
     finalizeApplication(message, activeApplication) {
         return __awaiter(this, void 0, void 0, function* () {
             this._applicationsLogChannel.send(new application_log_embed_1.ApplicationLogEmbed(message.author.username, 'Application Submitted', 'User submitted their application.'));
-            yield this._applicationsNewChannel.send(new application_embed_1.ApplicationEmbed(message, exports.questions, activeApplication)).then((applicationMessage) => {
-                applicationMessage.channel.send(new vote_embed_1.VoteEmbed(message)).then((voteMessage) => {
-                    this.awaitMajorityApproval(voteMessage, this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendReserveMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication));
-                });
-            });
+            let appChunked = this.safeChunkApp(exports.questions, activeApplication.replies);
+            yield this._applicationsNewChannel.send(new application_embed_1.ApplicationEmbed(message));
+            for (let i = 0; i < appChunked.length; i++) {
+                let applicationMessage = yield this._applicationsNewChannel.send(new application_questions_embed_1.ApplicationQuestionsEmbed(appChunked[i]));
+                if (i + 1 === appChunked.length) {
+                    this._applicationsNewChannel.send(new vote_embed_1.VoteEmbed(message)).then((voteMessage) => {
+                        this.awaitMajorityApproval(voteMessage, this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication), this.sendReserveMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication));
+                    });
+                }
+            }
             activeApplication.openAppChannel = (yield message.guild.createChannel(`application-${message.author.username}`, 'text'));
             activeApplication.openAppChannel.overwritePermissions(this._appSettings['bot'], { VIEW_CHANNEL: true, MENTION_EVERYONE: true });
             activeApplication.openAppChannel.overwritePermissions(this._appSettings['leadership'], { VIEW_CHANNEL: true });
@@ -258,10 +272,16 @@ class ApplicationBot {
         });
     }
     archiveApplication(reaction, applicationMessage, voteMessage, userMessage, activeApplication) {
-        this._applicationsArchivedChannel.send(new archived_application_embed_1.ArchivedApplicationEmbed(reaction, userMessage, exports.questions, activeApplication));
-        applicationMessage.delete();
-        voteMessage.delete();
-        this._activeApplications.delete(userMessage.author.id);
+        return __awaiter(this, void 0, void 0, function* () {
+            let appChunked = this.safeChunkApp(exports.questions, activeApplication.replies);
+            yield this._applicationsArchivedChannel.send(new archived_application_embed_1.ArchivedApplicationEmbed(reaction, userMessage));
+            for (let chunk of appChunked) {
+                yield this._applicationsArchivedChannel.send(new application_questions_embed_1.ApplicationQuestionsEmbed(chunk));
+            }
+            applicationMessage.delete();
+            voteMessage.delete();
+            this._activeApplications.delete(userMessage.author.id);
+        });
     }
     awaitRoleApproval(sentMessage, message, proceed, abort, timeout, preserveApplicationState) {
         sentMessage.react('✅').then(() => sentMessage.react('❌'));
@@ -381,6 +401,35 @@ class ApplicationBot {
     }
     matchMemberFromId(members, memberId) {
         return members.find((x) => x.id === memberId);
+    }
+    safeChunkApp(questions, app) {
+        let chunks = new Array();
+        for (let i = 0; i < app.length; i++) {
+            let safeMessage = app[i].content.match(/.{1,1024}(\s|$)/g);
+            for (let mi = 0; mi < safeMessage.length; mi++) {
+                if (mi > 0) {
+                    chunks.push(["(continued)", safeMessage[mi]]);
+                }
+                else {
+                    chunks.push([questions[i + 1], safeMessage[mi]]);
+                }
+            }
+        }
+        let safeChunks = new Array();
+        let index = 0;
+        let indexCharCount = 0;
+        for (let chunk of chunks) {
+            if (indexCharCount + (chunk[0] + chunk[1]).length > 6000) {
+                indexCharCount = 0;
+                index++;
+            }
+            if (!safeChunks[index]) {
+                safeChunks.push(new Array());
+            }
+            safeChunks[index].push([chunk[0], chunk[1]]);
+            indexCharCount += chunk[0].length + chunk[1].length;
+        }
+        return safeChunks;
     }
 }
 exports.ApplicationBot = ApplicationBot;

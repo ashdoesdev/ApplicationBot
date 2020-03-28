@@ -27,6 +27,7 @@ import { ReserveOptionDenyEmbed } from './Embeds/reserve-option-deny.embed';
 import { ReserveOptionTimeoutEmbed } from './Embeds/reserve-option-timeout.embed';
 import { ReserveOptionEmbed } from './Embeds/reserve-option.embed';
 import { ApplicationLogEmbed } from './Embeds/application-log.embed';
+import { ApplicationQuestionsEmbed } from './Embeds/application-questions.embed';
 
 export class ApplicationBot {
     private _client = new Client();
@@ -59,15 +60,27 @@ export class ApplicationBot {
         });
 
         this._client.on('message', async message => {
-            if (message.content === '/archiveapp' && message.author.id === this._appSettings['admin'] && (message.channel as TextChannel).name.startsWith('application-')) {
+            if (message.content === '/archiveapp' && message.member.roles.has(this._appSettings['leadership']) && (message.channel as TextChannel).name.startsWith('application-')) {
                 let messages = await this._messages.getMessages(message.channel as TextChannel);
 
                 messages.reverse();
+
+                let member;
+
+                if (Array.from(messages[0].mentions.users)[0]) {
+                    member = Array.from(messages[0].mentions.users)[0][1];
+                }
+
+                if (member) {
+                    (message.channel as TextChannel).overwritePermissions(member, { VIEW_CHANNEL: false });
+                }
 
                 for (let message of messages) {
                     await this._applicationChatsArchiveChannel.send(`*Message from ${message.author.username}*\n${message.content}`);
                     await message.delete();
                 }
+
+                (message.channel as TextChannel).delete();
             }
 
             if (message.content === '/apply') {
@@ -110,7 +123,7 @@ export class ApplicationBot {
             if (message.content.startsWith('/restore') && message.channel.type === 'dm' && message.author.id === this._appSettings['admin']) {
                 let memberId = message.content.match(/"((?:\\.|[^"\\])*)"/)[0].replace(/"/g, '');
                 this._guildMembers = this._client.guilds.get(this._appSettings['server']).members.array();
-                let fullMember = this.matchMemberFromId(this._guildMembers, memberId);
+                let fullMember = this.matchMemberFromId(this._guildMembers, memberId) || memberId;
 
                 if (fullMember) {
                     let path = message.content.replace('/restore', '').replace(memberId, '').replace(/"/g, '').trim();
@@ -120,7 +133,7 @@ export class ApplicationBot {
                             let backup: string[][] = JSON.parse(data);
                             this._applicationsArchivedChannel.send(new BackupApplicationEmbed(backup, fullMember));
                         })
-                        .on('error', () => {
+                        .on('error', (error) => {
                             message.channel.send('File not found.');
                         });
                 } else {
@@ -188,16 +201,25 @@ export class ApplicationBot {
     private async finalizeApplication(message: Message, activeApplication: ApplicationState): Promise<void> {
         this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Submitted', 'User submitted their application.'));
 
-        await this._applicationsNewChannel.send(new ApplicationEmbed(message, questions, activeApplication)).then((applicationMessage) => {
-            (applicationMessage as Message).channel.send(new VoteEmbed(message)).then((voteMessage) => {
-                this.awaitMajorityApproval(
-                    voteMessage as Message,
-                    this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication),
-                    this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication),
-                    this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication),
-                    this.sendReserveMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication))
-            });
-        });
+        let appChunked = this.safeChunkApp(questions, activeApplication.replies);
+
+        await this._applicationsNewChannel.send(new ApplicationEmbed(message));
+
+        for (let i = 0; i < appChunked.length; i++) {
+            let applicationMessage = await this._applicationsNewChannel.send(new ApplicationQuestionsEmbed(appChunked[i]));
+
+            if (i + 1 === appChunked.length) {
+                this._applicationsNewChannel.send(new VoteEmbed(message)).then((voteMessage) => {
+                    this.awaitMajorityApproval(
+                        voteMessage as Message,
+                        this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication),
+                        this.denyApplication.bind(this, applicationMessage, voteMessage, message, activeApplication),
+                        this.sendCommunityMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication),
+                        this.sendReserveMemberOption.bind(this, applicationMessage, voteMessage, message, activeApplication))
+                });
+
+            }
+        }
 
         activeApplication.openAppChannel = await message.guild.createChannel(`application-${message.author.username}`, 'text') as TextChannel;
 
@@ -341,8 +363,15 @@ export class ApplicationBot {
     }
 
 
-    private archiveApplication(reaction: string, applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
-        this._applicationsArchivedChannel.send(new ArchivedApplicationEmbed(reaction, userMessage, questions, activeApplication));
+    private async archiveApplication(reaction: string, applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): Promise<void> {
+        let appChunked = this.safeChunkApp(questions, activeApplication.replies);
+
+        await this._applicationsArchivedChannel.send(new ArchivedApplicationEmbed(reaction, userMessage));
+
+        for (let chunk of appChunked) {
+            await this._applicationsArchivedChannel.send(new ApplicationQuestionsEmbed(chunk));
+        }
+
         applicationMessage.delete();
         voteMessage.delete();
         this._activeApplications.delete(userMessage.author.id);
@@ -491,6 +520,43 @@ export class ApplicationBot {
 
     public matchMemberFromId(members: GuildMember[], memberId: string): GuildMember {
         return members.find((x) => x.id === memberId);
+    }
+
+    private safeChunkApp(questions: object, app: Message[]) {
+        let chunks = new Array<[string, string]>();
+
+        for (let i = 0; i < app.length; i++) {
+            let safeMessage = app[i].content.match(/.{1,1024}(\s|$)/g);
+
+            for (let mi = 0; mi < safeMessage.length; mi++) {
+                if (mi > 0) {
+                    chunks.push(["(continued)", safeMessage[mi]]);
+                } else {
+                    chunks.push([questions[i + 1], safeMessage[mi]]);
+                }
+            }
+        }
+
+        let safeChunks = new Array<[string, string][]>();
+
+        let index = 0;
+        let indexCharCount = 0;
+        for (let chunk of chunks) {
+            if (indexCharCount + (chunk[0] + chunk[1]).length > 6000) {
+                indexCharCount = 0;
+                index++;
+            }
+
+            if (!safeChunks[index]) {
+                safeChunks.push(new Array<[string, string]>());
+            }
+
+            safeChunks[index].push([chunk[0], chunk[1]]);
+
+            indexCharCount += chunk[0].length + chunk[1].length;
+        }
+
+        return safeChunks;
     }
 
 }

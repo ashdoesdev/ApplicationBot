@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 class ArchivedApplicationEmbed extends discord_js_1.RichEmbed {
-    constructor(reaction, message, questions, activeApplication) {
+    constructor(reaction, message) {
         super();
         this.setColor('#60b5bc');
         this.setTitle(`Application for ${message.member.displayName} ${reaction}`);
@@ -36,10 +36,6 @@ class ArchivedApplicationEmbed extends discord_js_1.RichEmbed {
         }
         this.setDescription(reactionMessage);
         this.setTimestamp();
-        for (let i = 0; i < activeApplication.replies.length; i++) {
-            let safeContent = activeApplication.replies[i].content.slice(0, 1024);
-            this.addField(questions[i + 1], safeContent);
-        }
     }
 }
 exports.ArchivedApplicationEmbed = ArchivedApplicationEmbed;

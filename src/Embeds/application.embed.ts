@@ -1,18 +1,11 @@
-﻿import { RichEmbed, Message } from "discord.js";
-import { ApplicationState } from "../Models/ApplicationState";
+﻿import { Message, RichEmbed } from "discord.js";
 
 export class ApplicationEmbed extends RichEmbed {
-    constructor(message: Message, questions: object, activeApplication: ApplicationState) {
+    constructor(message: Message) {
         super();
 
         this.setColor('#60b5bc');
         this.setTitle(`Application for ${message.member.displayName}`);
         this.setTimestamp();
-
-        for (let i = 0; i < activeApplication.replies.length; i++) {
-            let safeContent = activeApplication.replies[i].content.slice(0, 1024);
-
-            this.addField(questions[i + 1], safeContent || 'Error saving message. Check logs.');
-        }
     }
 }

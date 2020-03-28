@@ -1,8 +1,7 @@
-﻿import { RichEmbed, Message } from "discord.js";
-import { ApplicationState } from "../Models/ApplicationState";
+﻿import { Message, RichEmbed } from "discord.js";
 
 export class ArchivedApplicationEmbed extends RichEmbed {
-    constructor(reaction: string, message: Message, questions: object, activeApplication: ApplicationState) {
+    constructor(reaction: string, message: Message) {
         super();
 
         this.setColor('#60b5bc');
@@ -33,11 +32,5 @@ export class ArchivedApplicationEmbed extends RichEmbed {
         this.setDescription(reactionMessage);
 
         this.setTimestamp();
-
-        for (let i = 0; i < activeApplication.replies.length; i++) {
-            let safeContent = activeApplication.replies[i].content.slice(0, 1024);
-
-            this.addField(questions[i + 1], safeContent);
-        }
     }
 }
