@@ -148,6 +148,10 @@ export class ApplicationBot {
         return Array.from(this._questions).length + 1;
     }
 
+    public get monthDayYearFormatted(): string {
+        return `${new Date().getMonth() + 1}-${new Date().getDate()}-${new Date().getFullYear()}`;
+    }
+
     private proceedToApplicationStart(message: Message, activeApplication: ApplicationState) {
         message.author.send(new ApplicationStartEmbed()).then((sentMessage) => {
             this.awaitConfirmation(
@@ -366,7 +370,6 @@ export class ApplicationBot {
         })
     }
 
-
     private async archiveApplication(reaction: string, applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): Promise<void> {
         let appChunked = this._messages.safeChunkApp(this._questions, activeApplication.replies);
 
@@ -455,6 +458,8 @@ export class ApplicationBot {
                 collector.stop();
             }
 
+            // reactions below can be used to bypass voting
+
             if (reaction.emoji.name === '👍') {
                 approve();
                 collector.stop();
@@ -497,11 +502,11 @@ export class ApplicationBot {
         });
     }
 
-    private canUseCommands(message: Message): boolean {
-        return message.author.id === this._appSettings['admin'];
+    private matchMemberFromId(members: GuildMember[], memberId: string): GuildMember {
+        return members.find((x) => x.id === memberId);
     }
 
-    public async backUpValues(activeApplication: ApplicationState): Promise<void> {
+    private async backUpValues(activeApplication: ApplicationState): Promise<void> {
         let cleanReplies = new Array<[string, string]>();
 
         for (let i = 0; i < activeApplication.replies.length; i++) {
@@ -516,14 +521,6 @@ export class ApplicationBot {
 
         fs.createWriteStream(`${dir}/application-${activeApplication.replies[0].author.id}-${this.monthDayYearFormatted}.json`)
             .write(JSON.stringify(cleanReplies));
-    }
-
-    public get monthDayYearFormatted(): string {
-        return `${new Date().getMonth() + 1}-${new Date().getDate()}-${new Date().getFullYear()}`;
-    }
-
-    public matchMemberFromId(members: GuildMember[], memberId: string): GuildMember {
-        return members.find((x) => x.id === memberId);
     }
 
 }
