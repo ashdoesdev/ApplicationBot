@@ -39,11 +39,13 @@ export class ApplicationBot {
 
     private _leadership: GuildMember[];
     private _appSettings;
+    private _questions;
     private _messages: MessagesHelper = new MessagesHelper();
     private _guildMembers: GuildMember[];
 
     public start(appSettings): void {
         this._appSettings = appSettings;
+        this._questions = this._appSettings['questions'];
 
         this._client.login(this._appSettings['token']);
 
@@ -142,6 +144,10 @@ export class ApplicationBot {
         });
     }
 
+    public get lastQuestion(): number {
+        return Array.from(this._questions).length + 1;
+    }
+
     private proceedToApplicationStart(message: Message, activeApplication: ApplicationState) {
         message.author.send(new ApplicationStartEmbed()).then((sentMessage) => {
             this.awaitConfirmation(
@@ -168,12 +174,12 @@ export class ApplicationBot {
             this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Begun', 'Sent first question and awaiting reply.'));
 
         } else {
-            await this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, `Received Reply to Question ${questionNumber - 1}`, questions[questionNumber - 1]));
+            await this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, `Received Reply to Question ${questionNumber - 1}`, this._questions[questionNumber - 1]));
             this._applicationsLogChannel.send(`*Message received from ${message.author.username}*\n${activeApplication.replies[questionNumber - 2].content}`);
         }
 
-        if (questionNumber !== lastQuestion) {
-            message.author.send(new QuestionEmbed(questions[questionNumber], questionNumber)).then((sentMessage) => {
+        if (questionNumber !== this.lastQuestion) {
+            message.author.send(new QuestionEmbed(this._questions[questionNumber], questionNumber)).then((sentMessage) => {
                 questionNumber++;
 
                 this.awaitResponse(
@@ -199,7 +205,7 @@ export class ApplicationBot {
     private async finalizeApplication(message: Message, activeApplication: ApplicationState): Promise<void> {
         this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Submitted', 'User submitted their application.'));
 
-        let appChunked = this.safeChunkApp(questions, activeApplication.replies);
+        let appChunked = this.safeChunkApp(this._questions, activeApplication.replies);
 
         await this._applicationsNewChannel.send(new ApplicationEmbed(message));
 
@@ -236,7 +242,7 @@ export class ApplicationBot {
     } 
 
     private approveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
-        userMessage.author.send(new ApplicationAcceptedEmbed(this._appSettings['charter'], this._appSettings['schedule'], this._appSettings['raidiquette']));
+        userMessage.author.send(new ApplicationAcceptedEmbed(this._appSettings));
         userMessage.member.addRole(this._appSettings['applicant']);
 
         applicationMessage.channel.send('Application approved. Archiving in 5 seconds.').then((archiveMessage) => {
@@ -248,7 +254,7 @@ export class ApplicationBot {
     }
 
     private denyApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
-        userMessage.author.send(new ApplicationDeniedEmbed());
+        userMessage.author.send(new ApplicationDeniedEmbed(this._appSettings));
 
         applicationMessage.channel.send('Application denied. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
@@ -362,7 +368,7 @@ export class ApplicationBot {
 
 
     private async archiveApplication(reaction: string, applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): Promise<void> {
-        let appChunked = this.safeChunkApp(questions, activeApplication.replies);
+        let appChunked = this.safeChunkApp(this._questions, activeApplication.replies);
 
         await this._applicationsArchivedChannel.send(new ArchivedApplicationEmbed(reaction, userMessage));
 
@@ -499,7 +505,7 @@ export class ApplicationBot {
         let cleanReplies = new Array<[string, string]>();
 
         for (let i = 0; i < activeApplication.replies.length; i++) {
-            cleanReplies.push([questions[i + 1], activeApplication.replies[i].content]);
+            cleanReplies.push([this._questions[i + 1], activeApplication.replies[i].content]);
         }
 
         let dir = 'backups';
@@ -563,22 +569,3 @@ export class ApplicationBot {
 
 }
 
-export const lastQuestion = 16;
-
-export const questions = {
-    '1': 'What\'s your in-game name?',
-    '2': 'Class?',
-    '3': 'Race?',
-    '4': 'Level?',
-    '5': 'Professions?',
-    '6': 'What spec will you be playing? Link from a talent calculator (https://classic.wowhead.com/talent-calc)',
-    '7': 'Are you coming from another guild? If so, which guild and why are you leaving?',
-    '8': 'How did you hear about Sharp and Shiny, and what made you apply?',
-    '9': 'How extensive is your organized raiding experience? The more details the better',
-    '10': 'Do you have parses on warcraftlogs? If so, please provide a link.',
-    '11': 'What do you think is more important for a successful PvE progression guild: attitude or skill? Why?',
-    '12': 'When are your usual playtimes? What occupies the bulk of your time in-game? (PvP, PvE, RP, etc.)',
-    '13': 'We are on an RP-PvE server, but as a guild, we do not participate in RP. Is this in any way an issue?',
-    '14': 'Do you have a referral or know anyone in the guild?',
-    '15': 'Calzones or strombolis?'
-}
