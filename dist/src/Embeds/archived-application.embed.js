@@ -4,7 +4,7 @@ const discord_js_1 = require("discord.js");
 class ArchivedApplicationEmbed extends discord_js_1.RichEmbed {
     constructor(reaction, message) {
         super();
-        this.setColor('#60b5bc');
+        this.setColor(appSettings['guildColor']);
         this.setTitle(`Application for ${message.member.displayName} ${reaction}`);
         let reactionMessage;
         if (reaction === ':x:') {

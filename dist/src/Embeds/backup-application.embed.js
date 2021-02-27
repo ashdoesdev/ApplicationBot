@@ -4,7 +4,7 @@ const discord_js_1 = require("discord.js");
 class BackupApplicationEmbed extends discord_js_1.RichEmbed {
     constructor(questions, member) {
         super();
-        this.setColor('#60b5bc');
+        this.setColor(appSettings['guildColor']);
         if (member instanceof discord_js_1.GuildMember) {
             this.setTitle(`Backup of application for **${member.displayName}**`);
         }

@@ -1,10 +1,10 @@
 ﻿import { RichEmbed, GuildMember } from "discord.js";
 
 export class ApplicationStartEmbed extends RichEmbed {
-    constructor() {
+    constructor(guildColor: string) {
         super();
 
-        this.setColor('#60b5bc');
+        this.setColor(guildColor);
 
         this.addField(
             'About the Application Process',

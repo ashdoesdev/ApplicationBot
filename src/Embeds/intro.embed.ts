@@ -1,12 +1,20 @@
 ﻿import { RichEmbed } from "discord.js";
 
 export class IntroEmbed extends RichEmbed {
-    constructor(charterChannel: string, scheduleChannel: string) {
+    constructor(appSettings: any) {
         super();
 
-        this.setColor('#60b5bc');
-        this.setDescription(`Hey there! Thanks for your interest in applying to Sharp and Shiny. Before starting, have you read our <#${charterChannel}> and does our raid <#${scheduleChannel}> work for you?`);
+        this.setColor(appSettings['guildColor']);
+        this.setDescription(`Hey there! Thanks for your interest in applying to ${appSettings['guildName']}. Before starting, please confirm you have read these important channels:`);
 
-        this.addField('Please Confirm', 'Check yes to continue and confirm that you have read our charter and schedule.');
+        let channels = '';
+
+        for (let channel of appSettings['importantReadOnlyChannels']) {
+            channels += `<#${channel[1]}>\n`;
+        }
+
+        this.addField('Important channels', channels);
+
+        this.addField('Please Confirm', 'Check yes to continue and confirm that you have read these');
     }
 }

@@ -4,7 +4,7 @@ const discord_js_1 = require("discord.js");
 class ApplicationLogEmbed extends discord_js_1.RichEmbed {
     constructor(member, field1, field2) {
         super();
-        this.setColor('#60b5bc');
+        this.setColor(appSettings['guildColor']);
         if (member) {
             this.addField(field1, field2);
             this.setFooter(member);

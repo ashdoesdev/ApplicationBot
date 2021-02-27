@@ -6,7 +6,7 @@ class LeadershipHelpEmbed extends discord_js_1.RichEmbed {
     constructor(leadership) {
         super();
         this._leadershipList = new leadership_list_helper_1.LeadershipListHelper(leadership);
-        this.setColor('#60b5bc');
+        this.setColor(appSettings['guildColor']);
         this.addField('If you run into any issues, feel free to reach out to any member of our leadership', this._leadershipList.getMentions());
     }
 }

@@ -1,10 +1,10 @@
 ﻿import { GuildMember, RichEmbed } from "discord.js";
 
 export class BackupApplicationEmbed extends RichEmbed {
-    constructor(questions: string[][], member: GuildMember | string) {
+    constructor(questions: string[][], member: GuildMember | string, guildColor: string) {
         super();
 
-        this.setColor('#60b5bc');
+        this.setColor(guildColor);
         if (member instanceof GuildMember) {
             this.setTitle(`Backup of application for **${(member as GuildMember).displayName}**`);
         } else {

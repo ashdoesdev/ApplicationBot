@@ -1,10 +1,10 @@
 ﻿import { Message, RichEmbed } from "discord.js";
 
 export class ArchivedApplicationEmbed extends RichEmbed {
-    constructor(reaction: string, message: Message) {
+    constructor(reaction: string, message: Message, guildColor: string) {
         super();
 
-        this.setColor('#60b5bc');
+        this.setColor(guildColor);
         this.setTitle(`Application for ${message.member.displayName} ${reaction}`);
 
         let reactionMessage;

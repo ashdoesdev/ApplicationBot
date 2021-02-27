@@ -5,8 +5,6 @@ export class ApplicationDeniedEmbed extends RichEmbed {
         super();
 
         this.setColor(appSettings['guildColor']);
-        this.addField('Application Denied',
-            `Sorry, but your application to Sharp and Shiny has been declined.\n
-            ${appSettings['applicationDeniedAdditionalMessage']}`);
+        this.addField('Application Denied', appSettings['appDeniedMessage']);
     }
 }

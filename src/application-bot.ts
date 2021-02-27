@@ -96,7 +96,7 @@ export class ApplicationBot {
 
                         let activeApplication = this._activeApplications.get(message.author.id);
 
-                        message.author.send(new IntroEmbed(this._appSettings['charter'], this._appSettings['schedule'])).then((sentMessage) => {
+                        message.author.send(new IntroEmbed(this._appSettings)).then((sentMessage) => {
                             message.react('✅');
 
                             this.awaitConfirmation(
@@ -106,12 +106,12 @@ export class ApplicationBot {
                                 this.sendEmbed.bind(this, message, new TimeoutEmbed(this._leadership, this._appSettings['apply'])));
                         });
 
-                        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Initiated', 'Sent initial message covering the charter and schedule. Awaiting reply.'));
+                        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Initiated', 'Sent initial message covering the charter and schedule. Awaiting reply.', this._appSettings['guildColor']));
 
                     } else {
-                        this.sendEmbed(message, new AlreadyAppliedEmbed(this._leadership));
+                        this.sendEmbed(message, new AlreadyAppliedEmbed(this._leadership, this._appSettings['guildColor']));
 
-                        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'User May Need Help', 'User sent another /apply when they already had an active application.'));
+                        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'User May Need Help', 'User sent another /apply when they already had an active application.', this._appSettings['guildColor']));
                     }
                 }
             }
@@ -131,7 +131,7 @@ export class ApplicationBot {
                     fs.createReadStream(path)
                         .on('data', (data) => {
                             let backup: string[][] = JSON.parse(data);
-                            this._applicationsArchivedChannel.send(new BackupApplicationEmbed(backup, fullMember));
+                            this._applicationsArchivedChannel.send(new BackupApplicationEmbed(backup, fullMember, this._appSettings['guildColor']));
                         })
                         .on('error', (error) => {
                             message.channel.send('File not found.');
@@ -153,7 +153,7 @@ export class ApplicationBot {
     }
 
     private proceedToApplicationStart(message: Message, activeApplication: ApplicationState) {
-        message.author.send(new ApplicationStartEmbed()).then((sentMessage) => {
+        message.author.send(new ApplicationStartEmbed(this._appSettings['guildColor'])).then((sentMessage) => {
             this.awaitConfirmation(
                 sentMessage as Message,
                 message,
@@ -162,28 +162,28 @@ export class ApplicationBot {
             )
         });
 
-        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Charter and Schedule Approved', 'Sent "About the Application Process" message and awaiting reply to begin.'));
+        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Charter and Schedule Approved', 'Sent "About the Application Process" message and awaiting reply to begin.', this._appSettings['guildColor']));
     }
 
     private sendEmbed(message: Message, embed: RichEmbed) {
         message.author.send(embed);
 
         if (embed instanceof TimeoutEmbed) {
-            this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Timed Out', 'User let their application time out (30 minutes of inactivity). If you suspect this is a bug, let me know and I will check logs.'));
+            this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Timed Out', 'User let their application time out (30 minutes of inactivity). If you suspect this is a bug, let me know and I will check logs.', this._appSettings['guildColor']));
         }
     }
 
     private async proceedToQuestion(questionNumber: number, message: Message, activeApplication: ApplicationState) {
         if (questionNumber === 1) {
-            this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Begun', 'Sent first question and awaiting reply.'));
+            this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Begun', 'Sent first question and awaiting reply.', this._appSettings['guildColor']));
 
         } else {
-            await this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, `Received Reply to Question ${questionNumber - 1}`, this._questions[questionNumber - 1]));
+            await this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, `Received Reply to Question ${questionNumber - 1}`, this._questions[questionNumber - 1], this._appSettings['guildColor']));
             this._applicationsLogChannel.send(`*Message received from ${message.author.username}*\n${activeApplication.replies[questionNumber - 2].content}`);
         }
 
         if (questionNumber !== this.lastQuestion) {
-            message.author.send(new QuestionEmbed(this._questions[questionNumber], questionNumber)).then((sentMessage) => {
+            message.author.send(new QuestionEmbed(this._questions[questionNumber], questionNumber, this._appSettings['guildColor'])).then((sentMessage) => {
                 questionNumber++;
 
                 this.awaitResponse(
@@ -196,7 +196,7 @@ export class ApplicationBot {
             });
 
         } else {
-            message.author.send(new LastQuestionEmbed()).then((sentMessage) => {
+            message.author.send(new LastQuestionEmbed(this._appSettings['guildColor'])).then((sentMessage) => {
                 this.awaitConfirmation(
                     sentMessage as Message,
                     message,
@@ -207,17 +207,17 @@ export class ApplicationBot {
     }
 
     private async finalizeApplication(message: Message, activeApplication: ApplicationState): Promise<void> {
-        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Submitted', 'User submitted their application.'));
+        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Submitted', 'User submitted their application.', this._appSettings['guildColor']));
 
         let appChunked = this._messages.safeChunkApp(this._questions, activeApplication.replies);
 
-        await this._applicationsNewChannel.send(new ApplicationEmbed(message));
+        await this._applicationsNewChannel.send(new ApplicationEmbed(message, this._appSettings['guildColor']));
 
         for (let i = 0; i < appChunked.length; i++) {
-            let applicationMessage = await this._applicationsNewChannel.send(new ApplicationQuestionsEmbed(appChunked[i]));
+            let applicationMessage = await this._applicationsNewChannel.send(new ApplicationQuestionsEmbed(appChunked[i], this._appSettings['guildColor']), this._appSettings['guildColor']);
 
             if (i + 1 === appChunked.length) {
-                this._applicationsNewChannel.send(new VoteEmbed(message)).then((voteMessage) => {
+                this._applicationsNewChannel.send(new VoteEmbed(message, this._appSettings['guildColor'])).then((voteMessage) => {
                     this.awaitMajorityApproval(
                         voteMessage as Message,
                         this.approveApplication.bind(this, applicationMessage, voteMessage, message, activeApplication),
@@ -236,13 +236,13 @@ export class ApplicationBot {
         activeApplication.openAppChannel.overwritePermissions(message.author.id, { VIEW_CHANNEL: true });
         activeApplication.openAppChannel.overwritePermissions(this._appSettings['everyone'], { VIEW_CHANNEL: false });
 
-        message.author.send(new ThanksForApplyingEmbed(this._leadership, activeApplication.openAppChannel.id));
+        message.author.send(new ThanksForApplyingEmbed(this._leadership, activeApplication.openAppChannel.id, this._appSettings['guildColor']));
 
         activeApplication.openAppChannel.send(`<@${message.author.id}> *This is a temporary channel created to discuss your application. It will stay open until your application process is complete. Feel free to ping <@&${this._appSettings['leadership']}> for any questions.*`);
 
         this.backUpValues(activeApplication);
 
-        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Backup Complete', 'Post-application steps complete and application backed up.'));
+        this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Backup Complete', 'Post-application steps complete and application backed up.', this._appSettings['guildColor']));
     } 
 
     private approveApplication(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): void {
@@ -269,7 +269,7 @@ export class ApplicationBot {
     }
 
     private approveCommunityMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState, confirmationMessage: Message): void {
-        userMessage.author.send(new CommunityOptionAcceptEmbed());
+        userMessage.author.send(new CommunityOptionAcceptEmbed(this._appSettings));
         userMessage.member.addRole(this._appSettings['community']);
 
         applicationMessage.channel.send('Community member option accepted. Archiving in 5 seconds.').then((archiveMessage) => {
@@ -282,7 +282,7 @@ export class ApplicationBot {
     }
 
     private denyCommunityMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState, confirmationMessage: Message): void {
-        userMessage.author.send(new CommunityOptionDenyEmbed());
+        userMessage.author.send(new CommunityOptionDenyEmbed(this._appSettings));
 
         applicationMessage.channel.send('Community member option declined. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
@@ -294,7 +294,7 @@ export class ApplicationBot {
     }
 
     private timeoutCommunityMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState, confirmationMessage: Message): void {
-        userMessage.author.send(new CommunityOptionTimeoutEmbed());
+        userMessage.author.send(new CommunityOptionTimeoutEmbed(this._appSettings['guildColor']));
 
         applicationMessage.channel.send('Community member option timed out due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
@@ -308,7 +308,7 @@ export class ApplicationBot {
     private async sendCommunityMemberOption(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): Promise<void> {
         let confirmationMessage = await applicationMessage.channel.send(`Community member proposal sent to ${userMessage.author.username}. Awaiting reply.`);
 
-        userMessage.author.send(new CommunityOptionEmbed()).then((sentMessage) => {
+        userMessage.author.send(new CommunityOptionEmbed(this._appSettings['guildColor'])).then((sentMessage) => {
             this.awaitRoleApproval(
                 sentMessage as Message,
                 userMessage,
@@ -320,7 +320,7 @@ export class ApplicationBot {
     }
 
     private approveReserveMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState, confirmationMessage: Message): void {
-        userMessage.author.send(new ReserveOptionAcceptEmbed(this._appSettings['charter'], this._appSettings['schedule'], this._appSettings['raidiquette']));
+        userMessage.author.send(new ReserveOptionAcceptEmbed(this._appSettings));
         userMessage.member.addRole(this._appSettings['reserve']);
 
         applicationMessage.channel.send('Reserve member option accepted. Archiving in 5 seconds.').then((archiveMessage) => {
@@ -333,7 +333,7 @@ export class ApplicationBot {
     }
 
     private denyReserveMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState, confirmationMessage: Message): void {
-        userMessage.author.send(new ReserveOptionDenyEmbed());
+        userMessage.author.send(new ReserveOptionDenyEmbed(this._appSettings));
 
         applicationMessage.channel.send('Reserve member option declined. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
@@ -345,7 +345,7 @@ export class ApplicationBot {
     }
 
     private timeoutReserveMember(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState, confirmationMessage: Message): void {
-        userMessage.author.send(new ReserveOptionTimeoutEmbed());
+        userMessage.author.send(new ReserveOptionTimeoutEmbed(this._appSettings['guildColor']));
 
         applicationMessage.channel.send('Reserve member option timed out due to inactivity. Archiving in 5 seconds.').then((archiveMessage) => {
             setTimeout(() => {
@@ -359,7 +359,7 @@ export class ApplicationBot {
     private async sendReserveMemberOption(applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): Promise<void> {
         let confirmationMessage = await applicationMessage.channel.send(`Reserve member proposal sent to ${userMessage.author.username}. Awaiting reply.`);
 
-        userMessage.author.send(new ReserveOptionEmbed()).then((sentMessage) => {
+        userMessage.author.send(new ReserveOptionEmbed(this._appSettings)).then((sentMessage) => {
             this.awaitRoleApproval(
                 sentMessage as Message,
                 userMessage,
@@ -373,10 +373,10 @@ export class ApplicationBot {
     private async archiveApplication(reaction: string, applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): Promise<void> {
         let appChunked = this._messages.safeChunkApp(this._questions, activeApplication.replies);
 
-        await this._applicationsArchivedChannel.send(new ArchivedApplicationEmbed(reaction, userMessage));
+        await this._applicationsArchivedChannel.send(new ArchivedApplicationEmbed(reaction, userMessage, this._appSettings['guildColor']));
 
         for (let chunk of appChunked) {
-            await this._applicationsArchivedChannel.send(new ApplicationQuestionsEmbed(chunk));
+            await this._applicationsArchivedChannel.send(new ApplicationQuestionsEmbed(chunk, this._appSettings['guildColor']));
         }
 
         applicationMessage.delete();
