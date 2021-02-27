@@ -83,7 +83,7 @@ export class ApplicationBot {
                 (message.channel as TextChannel).delete();
             }
 
-            if (message.content === '/apply') {
+            if (message.content.toLowerCase() === '/apply') {
                 if (message.channel.id === this._applyChannel.id || (message.channel.id === this._applicationsLogChannel.id && message.author.id === this._appSettings['admin'])) {
                     this._leadership = this._client.guilds.get(this._appSettings['server']).members.array().filter((member) => member.roles.filter((role) => role.id === this._appSettings['leadership']).array().length > 0);
 
