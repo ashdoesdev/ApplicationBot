@@ -205,7 +205,7 @@ export class ApplicationBot {
     private async finalizeApplication(message: Message, activeApplication: ApplicationState): Promise<void> {
         this._applicationsLogChannel.send(new ApplicationLogEmbed(message.author.username, 'Application Submitted', 'User submitted their application.'));
 
-        let appChunked = this.safeChunkApp(this._questions, activeApplication.replies);
+        let appChunked = this._messages.safeChunkApp(this._questions, activeApplication.replies);
 
         await this._applicationsNewChannel.send(new ApplicationEmbed(message));
 
@@ -368,7 +368,7 @@ export class ApplicationBot {
 
 
     private async archiveApplication(reaction: string, applicationMessage: Message, voteMessage: Message, userMessage: Message, activeApplication: ApplicationState): Promise<void> {
-        let appChunked = this.safeChunkApp(this._questions, activeApplication.replies);
+        let appChunked = this._messages.safeChunkApp(this._questions, activeApplication.replies);
 
         await this._applicationsArchivedChannel.send(new ArchivedApplicationEmbed(reaction, userMessage));
 
@@ -524,47 +524,6 @@ export class ApplicationBot {
 
     public matchMemberFromId(members: GuildMember[], memberId: string): GuildMember {
         return members.find((x) => x.id === memberId);
-    }
-
-    private safeChunkApp(questions: object, app: Message[]) {
-        let chunks = new Array<[string, string]>();
-
-        for (let i = 0; i < app.length; i++) {
-            let safeMessage = app[i].content.match(/.{1,1024}(\s|$)/g);
-
-            if (!safeMessage) {
-                chunks.push([questions[i + 1], "Error saving message."]);
-            } else {
-                for (let mi = 0; mi < safeMessage.length; mi++) {
-                    if (mi > 0) {
-                        chunks.push(["(continued)", safeMessage[mi]]);
-                    } else {
-                        chunks.push([questions[i + 1], safeMessage[mi]]);
-                    }
-                }
-            }
-        }
-
-        let safeChunks = new Array<[string, string][]>();
-
-        let index = 0;
-        let indexCharCount = 0;
-        for (let chunk of chunks) {
-            if (indexCharCount + (chunk[0] + chunk[1]).length > 6000) {
-                indexCharCount = 0;
-                index++;
-            }
-
-            if (!safeChunks[index]) {
-                safeChunks.push(new Array<[string, string]>());
-            }
-
-            safeChunks[index].push([chunk[0], chunk[1]]);
-
-            indexCharCount += chunk[0].length + chunk[1].length;
-        }
-
-        return safeChunks;
     }
 
 }
