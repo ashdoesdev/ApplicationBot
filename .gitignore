@@ -1,0 +1,6 @@
+dist/
+backups/
+
+# ignore secrets
+*.dev.json
+*.prod.json
