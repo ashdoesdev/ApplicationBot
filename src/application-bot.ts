@@ -229,7 +229,7 @@ export class ApplicationBot {
             }
         }
 
-        activeApplication.openAppChannel = await message.guild.createChannel(`application-${message.author.username}`, 'text') as TextChannel;
+        activeApplication.openAppChannel = await message.guild.createChannel(`application-${message.author.username}`, { type: "text" }) as TextChannel;
 
         activeApplication.openAppChannel.overwritePermissions(this._appSettings['bot'], { VIEW_CHANNEL: true, MENTION_EVERYONE: true });
         activeApplication.openAppChannel.overwritePermissions(this._appSettings['leadership'], { VIEW_CHANNEL: true });

@@ -169,7 +169,7 @@ class ApplicationBot {
                     });
                 }
             }
-            activeApplication.openAppChannel = (yield message.guild.createChannel(`application-${message.author.username}`, 'text'));
+            activeApplication.openAppChannel = (yield message.guild.createChannel(`application-${message.author.username}`, { type: "text" }));
             activeApplication.openAppChannel.overwritePermissions(this._appSettings['bot'], { VIEW_CHANNEL: true, MENTION_EVERYONE: true });
             activeApplication.openAppChannel.overwritePermissions(this._appSettings['leadership'], { VIEW_CHANNEL: true });
             activeApplication.openAppChannel.overwritePermissions(message.author.id, { VIEW_CHANNEL: true });
