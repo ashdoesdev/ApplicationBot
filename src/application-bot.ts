@@ -144,8 +144,8 @@ export class ApplicationBot {
         });
     }
 
-    public get lastQuestion(): number {
-        return Object.entries(this._questions).length + 1;
+    public get questionCount(): number {
+        return Object.entries(this._questions).length;
     }
 
     public get monthDayYearFormatted(): string {
@@ -153,7 +153,7 @@ export class ApplicationBot {
     }
 
     private proceedToApplicationStart(message: Message, activeApplication: ApplicationState) {
-        message.author.send(new ApplicationStartEmbed(this._appSettings['guildColor'])).then((sentMessage) => {
+        message.author.send(new ApplicationStartEmbed(this._appSettings['guildColor'], this.questionCount)).then((sentMessage) => {
             this.awaitConfirmation(
                 sentMessage as Message,
                 message,
@@ -182,7 +182,7 @@ export class ApplicationBot {
             this._applicationsLogChannel.send(`*Message received from ${message.author.username}*\n${activeApplication.replies[questionNumber - 2].content}`);
         }
 
-        if (questionNumber !== this.lastQuestion) {
+        if (questionNumber !== (this.questionCount + 1)) {
             message.author.send(new QuestionEmbed(this._questions[questionNumber], questionNumber, this._appSettings['guildColor'])).then((sentMessage) => {
                 questionNumber++;
 
