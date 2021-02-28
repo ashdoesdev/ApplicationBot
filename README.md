@@ -77,6 +77,3 @@ Will manually restore and move an application if votes do not go through due to 
 ```
 
 Application backups are saved automatically to /backups. File may need to be moved before it can be successfully restored (or adjust path accordingly).
-
-## License
-[MIT](https://choosealicense.com/licenses/mit/)
