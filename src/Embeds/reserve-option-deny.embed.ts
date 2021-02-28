@@ -5,6 +5,6 @@ export class ReserveOptionDenyEmbed extends RichEmbed {
         super();
 
         this.setColor(appSettings['guildColor']);
-        this.addField('Reserve Option Declined', appSettings['reserveProposalDeclinedMessage']']);
+        this.addField('Reserve Option Declined', appSettings['reserveProposalDeclinedMessage']);
     }
 }

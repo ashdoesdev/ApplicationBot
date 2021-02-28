@@ -2,9 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 class ApplicationEmbed extends discord_js_1.RichEmbed {
-    constructor(message) {
+    constructor(message, guildColor) {
         super();
-        this.setColor(appSettings['guildColor']);
+        this.setColor(guildColor);
         this.setTitle(`Application for ${message.member.displayName}`);
         this.setTimestamp();
     }

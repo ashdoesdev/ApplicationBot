@@ -9,7 +9,7 @@ export class IntroEmbed extends RichEmbed {
 
         let channels = '';
 
-        for (let channel of appSettings['importantReadOnlyChannels']) {
+        for (let channel of Object.entries(appSettings['importantReadOnlyChannels'])) {
             channels += `<#${channel[1]}>\n`;
         }
 

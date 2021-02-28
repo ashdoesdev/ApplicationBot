@@ -2,11 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 class IntroEmbed extends discord_js_1.RichEmbed {
-    constructor(charterChannel, scheduleChannel) {
+    constructor(appSettings) {
         super();
         this.setColor(appSettings['guildColor']);
-        this.setDescription(`Hey there! Thanks for your interest in applying to Sharp and Shiny. Before starting, have you read our <#${charterChannel}> and does our raid <#${scheduleChannel}> work for you?`);
-        this.addField('Please Confirm', 'Check yes to continue and confirm that you have read our charter and schedule.');
+        this.setDescription(`Hey there! Thanks for your interest in applying to ${appSettings['guildName']}. Before starting, please confirm you have read these important channels:`);
+        let channels = '';
+        for (let channel of Object.entries(appSettings['importantReadOnlyChannels'])) {
+            channels += `<#${channel[1]}>\n`;
+        }
+        this.addField('Important channels', channels);
+        this.addField('Please Confirm', 'Check yes to continue and confirm that you have read these');
     }
 }
 exports.IntroEmbed = IntroEmbed;

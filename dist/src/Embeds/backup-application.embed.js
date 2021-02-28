@@ -2,9 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 class BackupApplicationEmbed extends discord_js_1.RichEmbed {
-    constructor(questions, member) {
+    constructor(questions, member, guildColor) {
         super();
-        this.setColor(appSettings['guildColor']);
+        this.setColor(guildColor);
         if (member instanceof discord_js_1.GuildMember) {
             this.setTitle(`Backup of application for **${member.displayName}**`);
         }

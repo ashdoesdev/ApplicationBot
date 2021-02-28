@@ -2,9 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 class ArchivedApplicationEmbed extends discord_js_1.RichEmbed {
-    constructor(reaction, message) {
+    constructor(reaction, message, guildColor) {
         super();
-        this.setColor(appSettings['guildColor']);
+        this.setColor(guildColor);
         this.setTitle(`Application for ${message.member.displayName} ${reaction}`);
         let reactionMessage;
         if (reaction === ':x:') {

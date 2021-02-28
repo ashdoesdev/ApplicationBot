@@ -145,7 +145,7 @@ export class ApplicationBot {
     }
 
     public get lastQuestion(): number {
-        return Array.from(this._questions).length + 1;
+        return Object.entries(this._questions).length + 1;
     }
 
     public get monthDayYearFormatted(): string {
@@ -214,7 +214,7 @@ export class ApplicationBot {
         await this._applicationsNewChannel.send(new ApplicationEmbed(message, this._appSettings['guildColor']));
 
         for (let i = 0; i < appChunked.length; i++) {
-            let applicationMessage = await this._applicationsNewChannel.send(new ApplicationQuestionsEmbed(appChunked[i], this._appSettings['guildColor']), this._appSettings['guildColor']);
+            let applicationMessage = await this._applicationsNewChannel.send(new ApplicationQuestionsEmbed(appChunked[i], this._appSettings['guildColor']));
 
             if (i + 1 === appChunked.length) {
                 this._applicationsNewChannel.send(new VoteEmbed(message, this._appSettings['guildColor'])).then((voteMessage) => {

@@ -19,7 +19,12 @@ class LeadershipListHelper {
                 mentions += `<@${this._leadership[i].id}>, `;
             }
         }
-        return mentions;
+        if (mentions.length > 0) {
+            return mentions;
+        }
+        else {
+            return 'No members found.';
+        }
     }
 }
 exports.LeadershipListHelper = LeadershipListHelper;
