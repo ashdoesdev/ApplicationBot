@@ -7,7 +7,7 @@ ApplicationBot is a Discord bot for guilds and other online communities to manag
 I recommend hosting the bot on a free-tier EC2 instance.
 
 ### Part 1. Set up the application and validate it runs locally.
-1. Set up application in the [Discord Developer Portal](https://discord.com/developers/applications)
+1. Set up application in the [Discord Developer Portal](https://discord.com/developers/applications).
 2. Add a bot user to the application. Copy the token. Don't share or commit it. Adjust .gitignore if needed.
 3. Invite bot to server. [Recommended permissions](https://discordapi.com/permissions.html#1342516344)
 4. Download files and test the bot locally. 
@@ -22,9 +22,8 @@ node dist/src/index.js
 5. Launch instance and save the key pair provided.
 6. [Convert .ppk to .pem with PuTTYgen](https://aws.amazon.com/premiumsupport/knowledge-center/convert-pem-file-into-ppk/). 
 7. [Connect to EC2 server with WinSCP](https://winscp.net/eng/docs/guide_amazon_ec2) (or any FTP client).
-
-4. Upload files.
-5. Install node & package dependencies.
+8. Upload files.
+9. Install node & package dependencies.
 
 ```
 $ sudo apt-get update
@@ -33,9 +32,9 @@ $ sudo apt-get install npm
 $ npm install
 ```
 
-6. Install [forever](https://www.npmjs.com/package/forever) module `$ sudo npm install forever -g`. I highly suggest reading the logging options and also specifying logging files.
+10. Install [forever](https://www.npmjs.com/package/forever) module `$ sudo npm install forever -g`. I highly suggest reading the logging options and also specifying logging files.
 
-7. Run application `$ forever start index.js`
+11. Run application `$ forever start index.js`
 
 ### EC2 Tips
 - *Never have more than one running instance (especially for a long period of time)*
