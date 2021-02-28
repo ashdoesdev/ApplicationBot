@@ -73,7 +73,7 @@ Will respond 'Bot running.' if running.
 Will manually restore and move an application if votes do not go through due to bot downtime.
 
 ```
-/restore "Lush [Application Acceptance Status Here]" application-xxxxxxxxxxxxxxxxxx-1-1-2021.json
+/restore "Member Name [Application Acceptance Status Here]" application-xxxxxxxxxxxxxxxxxx-1-1-2021.json
 ```
 
 Application backups are saved automatically to /backups. File may need to be moved before it can be successfully restored (or adjust path accordingly).
