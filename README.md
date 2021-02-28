@@ -1,15 +1,15 @@
 # ApplicationBot
 
-ApplicationBot is a Discord bot for guilds to manage applications.
+ApplicationBot is a Discord bot for guilds and other online communities to manage applications.
 
-## Suggested Setup
+## Setup
 
-Host bot on a free-tier EC2 instance.
+I recommend hosting the bot on a free-tier EC2 instance.
 
 ### Part 1. Set up the application and validate it runs locally.
 1. Set up application in the [Discord Developer Portal](https://discord.com/developers/applications)
-2. Add a bot user to the application. Copy the token. Don't share or commit it. Adjust gitignore if needed.
-3. Invite bot to server. [Suggested permissions](https://discordapi.com/permissions.html#1342516344)
+2. Add a bot user to the application. Copy the token. Don't share or commit it. Adjust .gitignore if needed.
+3. Invite bot to server. [Recommended permissions](https://discordapi.com/permissions.html#1342516344)
 4. Download files and test the bot locally. 
 ```
 npm install
@@ -44,7 +44,7 @@ $ npm install
 
 ## Usage
 
-To customize the bot for your guild, a few edits will be needed. 
+To customize the bot for your community, a few edits will be needed. 
 
 1. Create your appSettings. Start by copying the appSettings to a new file. Customize the data accordingly. I usually set up appSettings.dev.json and appSettings.prod.json (one with keys for a dev Discord server, another with the "main" server).
 
