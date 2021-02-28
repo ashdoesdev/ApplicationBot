@@ -1,9 +1,9 @@
 {
-  "name": "attendance-bot",
+  "name": "application-bot",
   "version": "1.0.0",
-  "description": "Attendance bot for Discord",
-  "main": "bot.js",
-  "author": "ash",
+  "description": "Application bot for Discord",
+  "main": "index.js",
+  "author": "ash/lush",
   "dependencies": {
     "discord.js": "^11.6.4",
     "reflect-metadata": "^0.1.13",
