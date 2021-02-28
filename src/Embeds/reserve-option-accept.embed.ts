@@ -7,7 +7,7 @@ export class ReserveOptionAcceptEmbed extends RichEmbed {
         this.setColor(appSettings['guildColor']);
         this.addField('Accepted as Reserve Member', appSettings['reserveProposalAcceptedMessage']);
 
-        for (let link of appSettings['guildLinksForAcceptedMessages']) {
+        for (let link of Object.entries(appSettings['guildLinksForAcceptedMessages'])) {
             this.addField(link[0], link[1]);
         }
     }
